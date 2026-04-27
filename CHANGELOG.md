@@ -9,6 +9,36 @@
 
 ---
 
+## 2026.04.27.5 — 默认阵容换血：DeepSeek V3.2 替换 GLM-4.7
+
+### Breaking
+
+- **第 4 家参战模型从 `glm-4.7-ioa` 换为 `deepseek-v3-2-volc-ioa`**。Round 1/2/3 默认阵容现在是：
+  - `claude-sonnet-4.6-1m`（Anthropic）
+  - `gpt-5.4`（OpenAI）
+  - `gemini-3.0-pro`（Google）
+  - **`deepseek-v3-2-volc-ioa`**（DeepSeek，新）⭐
+- Round 4 裁判 `claude-opus-4.7-1m` 不变。
+
+### 替换原因
+
+1. **GLM-4.7 多模态不稳定**：18:48 真实事故中 GLM 在正式 moco 跑里返回 `image_seen=false`（声称"不支持图片处理"），与同 ID 18:15 探针成功读图的结果矛盾。V3 校验已记录在案。
+2. **DeepSeek V3.2 推理能力更强**：在严密推理 + 找茬挑战场景的口碑更适合 moco 的辩论本质。
+3. **DeepSeek V3.2 视觉读图实测稳定**：20:22 探针通过——准确识别 Cursor 截图布局、按钮文字、对话主题。
+4. **4 家厂商差异最大化**：Anthropic（对话/伦理）+ OpenAI（说明文）+ Google（结构化）+ DeepSeek（严密推理），4 个不同流派覆盖更广。
+
+### Behavior
+
+- Display name "GLM-4.7" → "DeepSeek V3.2"，颜色从 `#6B7280`（灰）改为 `#7C3AED`（紫，DeepSeek 系约定色）。
+- 回归 fixture `fix-healthy.json` / `fix-vision-healthy.json` 已更新到新阵容；旧反向 fixture（H1/H2/H3/V1-V5）保留 `glm-4.7-ioa` 不影响测试目的（这些 fixture 测的是规则违反，不测阵容）。
+
+### Migration
+
+- 历史 debate-data.json 含 `model_id="glm-4.7-ioa"` 仍可正常渲染（不会被任何校验拦下，因为它不是占位模型）。
+- 如果你的工作区有自定义脚本调 moco，把 GLM 那一路 Agent.model 改成 `deepseek-v3-2-volc-ioa` 即可。
+
+---
+
 ## 2026.04.27.4 — 砍掉 vision_mode=full（误读修正）
 
 ### Breaking
