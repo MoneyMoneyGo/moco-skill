@@ -9,6 +9,32 @@
 
 ---
 
+## 2026.04.27.4 — 砍掉 vision_mode=full（误读修正）
+
+### Breaking
+
+- **删除 `vision_mode=full`**。`VALID_VISION_MODES` 从 `{full, r1_only, none}` 收缩为 `{r1_only, none}`。任何使用 `vision_mode=full` 的 debate-data.json 现在会被 V1 校验拦下（exit 3），错误信息明确指出迁移路径：使用 `r1_only` + `needs_image_for_rebuttal` 替代。
+- **删除 V3 校验里 `{"full", "r1_only"}` 集合判断**，改成只检查 `r1_only`。
+- **删除 HTML vision_header 的 FULL 标签 / CSS / Python label map**。
+
+### 背景与决策
+
+- 18:32 银纸的原话："1) v1 先支持图片输入，先跑通 vision_mode=full；2) 默认切到 vision_mode=r1_only..." —— **"先跑通 full"是 v1 开发阶段的验证路径**（先把最暴力的全程带图跑通，确认可行性），**不是要长期保留 full 作为用户档**。
+- 当时我（写 SKILL.md 的）误读为"保留 full 作为可选档"，导致 `VALID_VISION_MODES` 多了一档。
+- 19:51 银纸指出："为什么会需要全程都带图？我开始的时候没有提出这个诉求吧？" 决定砍 full。
+
+### 替代路径
+
+- 之前需要 `full` 的"个别 clash 必须看图"场景，现在用 **R3 局部回传机制** 覆盖：挑战方在 R2 声明 `needs_image_for_rebuttal=true`，被挑战方在 R3 反驳调用里就会带图（V4/V5 校验保证不滥用）。
+- 这等同于"按 clash 升级到 full 子集"，比把整场 moco 都开 full 更精细、更省 token。
+
+### Fix
+
+- SKILL.md 多模态段措辞简化：原"主智能体默认走 r1_only，除非用户显式说全程带图才切 full" → 改为"有图 → r1_only；没图 → none。无判断、无询问。"
+- 新增回归 fixture `fix-v1-bad-mode-full.json`，验证 full 现在确实被 V1 拦下。
+
+---
+
 ## 2026.04.27.3 — 视口宽度提醒（默认 1280px）
 
 ### Behavior

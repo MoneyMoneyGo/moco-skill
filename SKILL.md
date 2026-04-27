@@ -504,20 +504,20 @@ Build an HTML page using `assets/compare-template.html` as base. The page MUST i
 - **Hard fail（exit 3，HTML 不生成）**：H1 model_id 是 default/lite/reasoning/""；H2 Round 1 model_id 重复；H3 judge_model_id ∈ lineup；H4 有 rebuttal 但缺 verdict 或 winner 取值非法。
 - **Soft warn（exit 0，stderr 提示）**：S1 缺 model_id；S2 缺 utc；S3 全部 utc 完全相同（同步水印）；S4 缺 run_start/run_end。
 
-## 多模态：vision_mode 策略（银纸 2026-04-27 18:32 锁定）
+## 多模态：vision_mode 策略（银纸 2026-04-27 18:32 锁定 / 19:51 砍 full）
 
 moco 支持图片提问。完整路径：用户给图 → 主智能体把图保存到工作区 → Round 1 prompt 模板里附图路径 → 4 家子 Agent 自己 `Read` 工具读图 → 各自基于真图答题 → Round 2/3/4 默认仅传文本，仅"图像事实争议"clash 才回传图。
 
-### vision_mode 取值
+### vision_mode 取值（v2026.04.27.4 起只剩两档）
 
 | 取值 | 含义 | 何时用 |
 |---|---|---|
-| `full` | 4 家在 Round 1/2/3/4 全程都附图 | 图本身高度复杂、所有挑战都涉及图像细节 |
-| `r1_only`（默认）| 只有 Round 1 附图，R2/3/4 默认纯文本 | 大多数场景；token 成本最低、信息无损 |
-| `none` | 不传图（纯文本场景）| 没有图时的默认值；有图时不允许 |
-| ~~`smart`~~ | 智能判定是否需要图 | **v1 不实现**，由 `_gen_moco.py` V1 校验拦截 |
+| `r1_only`（默认）| 只有 Round 1 附图，R2/3/4 默认纯文本；仅 `needs_image_for_rebuttal=true` 的 clash 在 R3 局部回传图 | **有图就用这档**，不需要选 |
+| `none` | 不传图（纯文本场景） | 没有图时的默认值；有图时不允许 |
+| ~~`full`~~ | ~~全程带图~~ | **v2026.04.27.4 删除**：原本是 v1 开发阶段的"先跑通"档位，被误读为长期可选档；R3 局部回传机制（`needs_image_for_rebuttal`）已覆盖"个别 clash 需要图"的真实场景，无需独立保留 |
+| ~~`smart`~~ | ~~智能判定是否需要图~~ | **v1 不实现**，由 V1 校验拦截 |
 
-主智能体默认走 `r1_only`，除非用户显式说"全程带图"才切 `full`。
+主智能体规则极简：**有图 → r1_only；没图 → none**。无判断、无询问。
 
 ### Round 1 prompt 模板新增（多模态版）
 
@@ -574,7 +574,7 @@ Instructions:
 ### debate-data.json 多模态字段（顶层 + model + clash）
 
 **顶层新增**：
-- `vision_mode`（必填）：`"full"` / `"r1_only"` / `"none"`。有图必须 full 或 r1_only。
+- `vision_mode`（必填）：`"r1_only"` / `"none"`（v2026.04.27.4 起 `full` 已删除）。有图必须 r1_only。
 - `question_image_paths`（必填，数组）：所有原图的绝对路径。
 
 **每个 model 新增**：
@@ -589,7 +589,7 @@ Instructions:
 
 | 编号 | 检查 | 失败时 |
 |---|---|---|
-| V1 | `vision_mode ∈ {full, r1_only, none}` | exit 3 |
+| V1 | `vision_mode ∈ {r1_only, none}` （full / smart 都拦） | exit 3 |
 | V2 | 有图但 vision_mode=none | exit 3 |
 | V3 | 4 家 image_seen 必须全为 true | exit 3 |
 | V4 | R3 attached image 但 R2 没声明 needs | exit 3 |

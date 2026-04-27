@@ -216,7 +216,7 @@ with open(DEBATE_DATA, "r", encoding="utf-8") as f:
 #   2 = file not found（已有逻辑）
 # ---------------------------------------------------------------------------
 FORBIDDEN_MODEL_IDS = {"default", "lite", "reasoning", ""}
-VALID_VISION_MODES = {"full", "r1_only", "none"}  # v1 不实现 smart
+VALID_VISION_MODES = {"r1_only", "none"}  # 银纸 2026-04-27 19:51 决定砍 full（CHANGELOG 2026.04.27.4）
 
 
 def _hard_fail(msg):
@@ -360,7 +360,9 @@ def validate_debate_data(data):
         if vision_mode not in VALID_VISION_MODES:
             _hard_fail(
                 f"V1 invalid vision_mode={vision_mode!r}. "
-                f"Must be one of {sorted(VALID_VISION_MODES)} (smart 暂不支持，v1 only)."
+                f"Must be one of {sorted(VALID_VISION_MODES)}. "
+                f"Note: 'full' was removed at v2026.04.27.4 (use r1_only + needs_image_for_rebuttal "
+                f"for image-dispute clashes); 'smart' was never implemented."
             )
 
         # ----- Hard V2: 有图必须开 vision 模式 -----
@@ -372,7 +374,7 @@ def validate_debate_data(data):
 
         # ----- Hard V3: 有图模式下，4 家 image_seen 必须全部为 true -----
         # 这是硬约束 B 的代码层兜底：缺字段或任一家未看到，整场都不可信。
-        if image_paths and vision_mode in {"full", "r1_only"}:
+        if image_paths and vision_mode == "r1_only":
             missing_image_seen = []
             not_seen = []
             for m in models:
@@ -512,7 +514,6 @@ def build_vision_header():
     # vision_mode 标签
     mode = VISION_MODE or "none"
     mode_label_map = {
-        "full":    "FULL · 全程带图",
         "r1_only": "R1_ONLY · 仅首轮带图",
         "none":    "NONE · 纯文本",
     }
