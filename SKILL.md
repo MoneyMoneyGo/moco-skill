@@ -1,9 +1,9 @@
 ---
 name: moco
-description: "moco 多模型辩论 — 让 4 个 AI 同台答题、互相找错、各自反驳，再综合评分挑出最佳答案。适合方案评估、选型决策、避免单模型偏见。触发：moco、MoCompare、多模型对比、模型 PK、模型辩论、对比回答、几个模型一起答、model debate、compare models。"
+description: "MoCo (Multi-Model Compare) 多模型辩论 — 让 4 个 AI 同台答题、互相找错、各自反驳，再综合评分挑出最佳答案。适合方案评估、选型决策、避免单模型偏见。触发：moco、MoCo、MoCompare（旧名）、多模型对比、模型 PK、模型辩论、对比回答、几个模型一起答、model debate、compare models。"
 ---
 
-# moco — Multi-Model Compare & Debate
+# MoCo — Multi-Model Compare & Debate
 
 ## Overview
 
