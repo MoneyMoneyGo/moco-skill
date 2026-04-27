@@ -332,30 +332,14 @@
     opacity: 0.6;
   }
 
-  /* ===== VISION HEADER (multimodal transparency strip) ===== */
-  /* 银纸 2026-04-27 决定的硬约束 B：让读者一眼看见
-     ① 原图（缩略图，点击放大）② 当前 vision_mode ③ 4 家各自是否真看到了图。
-     如果某家未看到（image_seen=false），_gen_moco.py 在校验阶段就 hard fail，
-     这里只渲染"全部看到"的合规情况；保留状态符号是为了将来 v2 的 smart 降级模式预留。 */
+  /* ===== VISION HEADER (v2026.04.27.6 极简化) ===== */
+  /* 设计原则：是否带图用户从缩略图本身就看得到。vision_mode 等元信息藏进 hover tooltip，
+     不抢戏。异常分支（image_seen=false）已被 V3 校验在 HTML 生成前拦死，所以 UI 永远是"绿态"。 */
   .vision-header {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
     justify-content: center;
-    gap: var(--gap-block-s) var(--gap-block-m);
-    max-width: 800px;
-    margin: var(--gap-block-s) auto 0;
-    padding: var(--gap-block-s) var(--gap-block-m);
-    background: var(--hover-bg, rgba(0,0,0,0.025));
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: var(--text-meta);
-    color: var(--text-dim);
-  }
-  .vision-header-thumbs {
-    display: flex;
     gap: var(--gap-inline);
-    align-items: center;
+    margin: var(--gap-block-s) auto 0;
   }
   .vision-header-thumb {
     height: 48px;
@@ -366,40 +350,6 @@
     transition: transform var(--motion-dur) var(--motion-ease);
   }
   .vision-header-thumb:hover { transform: scale(1.05); }
-  .vision-header-mode {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: var(--rebuttal-green, #10A37F);
-    color: white;
-    font-weight: 600;
-    font-size: var(--text-micro);
-    letter-spacing: 0.04em;
-  }
-  .vision-header-mode--r1_only { background: #10A37F; }
-  .vision-header-mode--none    { background: var(--text-light); }
-  .vision-header-seen {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--gap-inline);
-    flex-wrap: wrap;
-  }
-  .vision-header-seen-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    font-size: var(--text-micro);
-  }
-  .vision-header-seen-item .ok { color: #10A37F; font-weight: 700; }
-  .vision-header-seen-item .ng { color: #DC2626; font-weight: 700; }
-  .vision-header-label {
-    font-size: var(--text-micro);
-    color: var(--text-light);
-    text-transform: uppercase;
-    letter-spacing: var(--ls-widest);
-  }
   /* ===== ROSTER BAR (now inside hero) ===== */
   .roster-section {
     margin: 0;
@@ -1704,6 +1654,132 @@
     color: #c4c4c0;
     font-size: var(--text-meta);
   }
+  .footer-divider { margin: 0 8px; opacity: 0.4; }
+  .footer-cost-trigger {
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    font-size: var(--text-meta);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background var(--motion-dur) var(--motion-ease), color var(--motion-dur) var(--motion-ease);
+    font-family: inherit;
+  }
+  .footer-cost-trigger:hover { background: var(--hover-bg); color: var(--text-dim); }
+  .footer-cost-help {
+    display: inline-block;
+    margin-left: 2px;
+    font-size: 12px;
+    opacity: 0.6;
+  }
+
+  /* ===== COST REFERENCE MODAL ===== */
+  .cost-modal[hidden] { display: none; }
+  .cost-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--gap-block-m);
+  }
+  .cost-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+    animation: cost-modal-fade 0.2s ease-out;
+  }
+  .cost-modal-card {
+    position: relative;
+    background: var(--bg, #fff);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    max-width: 720px;
+    width: 100%;
+    max-height: 85vh;
+    overflow: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    animation: cost-modal-slide 0.25s ease-out;
+  }
+  .cost-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--gap-block-m) var(--gap-block-m) var(--gap-block-s);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg, #fff);
+    z-index: 1;
+  }
+  .cost-modal-title {
+    margin: 0;
+    font-size: var(--text-strong, 16px);
+    font-weight: 700;
+    color: var(--text);
+  }
+  .cost-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 4px;
+    line-height: 1;
+    transition: background var(--motion-dur) var(--motion-ease);
+  }
+  .cost-modal-close:hover { background: var(--hover-bg); color: var(--text); }
+  .cost-modal-body { padding: var(--gap-block-s) var(--gap-block-m) var(--gap-block-m); }
+  .cost-modal-h3 {
+    margin: var(--gap-block-m) 0 var(--gap-block-s);
+    font-size: var(--text-body, 14px);
+    font-weight: 600;
+    color: var(--text);
+  }
+  .cost-modal-h3:first-child { margin-top: 0; }
+  .cost-modal-note {
+    font-size: var(--text-meta);
+    color: var(--text-dim);
+    line-height: 1.6;
+    margin: 0 0 var(--gap-block-s);
+  }
+  .cost-modal-note-sub { font-size: var(--text-micro); color: var(--text-light); }
+  .cost-modal-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--gap-block-s);
+    font-size: var(--text-meta);
+  }
+  .cost-modal-table th,
+  .cost-modal-table td {
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .cost-modal-table th {
+    font-weight: 600;
+    color: var(--text-dim);
+    background: var(--hover-bg, rgba(0,0,0,0.02));
+  }
+  .cost-modal-table code {
+    font-size: 0.9em;
+    background: var(--hover-bg, rgba(0,0,0,0.04));
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+  @keyframes cost-modal-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes cost-modal-slide {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 
   /* ===== RESPONSIVE ===== */
   @media (max-width: 1080px) {
@@ -2421,6 +2497,71 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="footer">
   Generated by MoCompare · {{TIMESTAMP}} · ⚔️ Cross-Model Debate Enabled
+  <span class="footer-divider">·</span>
+  <button class="footer-cost-trigger" id="footerCostTrigger" aria-haspopup="dialog" aria-controls="costModal">
+    📊 积分消耗 <span class="footer-cost-help" aria-label="查看积分消耗参考">ⓘ</span>
+  </button>
+</div>
+
+<!-- ===== COST REFERENCE MODAL（点击 footer ⓘ 触发；Esc / 遮罩 / ✕ 关闭） ===== -->
+<div class="cost-modal" id="costModal" role="dialog" aria-modal="true" aria-labelledby="costModalTitle" hidden>
+  <div class="cost-modal-overlay" id="costModalOverlay"></div>
+  <div class="cost-modal-card" role="document">
+    <div class="cost-modal-head">
+      <h2 class="cost-modal-title" id="costModalTitle">📊 moco 积分消耗参考</h2>
+      <button class="cost-modal-close" id="costModalClose" aria-label="关闭">✕</button>
+    </div>
+    <div class="cost-modal-body">
+      <p class="cost-modal-note">
+        所有数字基于 <strong>200 字 prompt + 1000 字 output</strong> 标准估算，token 数为"等效 input token"（output 已按 5× 折算）。
+        实际值受上下文累积、工具调用、模型计费方式影响，可能 ±30%。本表是数量级参考，不是计费承诺。
+      </p>
+
+      <h3 class="cost-modal-h3">表 1：moco 各阶段调用细节</h3>
+      <table class="cost-modal-table">
+        <thead><tr><th>阶段</th><th>调用数</th><th>模型</th><th>单次 token 量级</th><th>小计</th></tr></thead>
+        <tbody>
+          <tr><td>R1 初答</td><td>4 并发</td><td>Sonnet 4.6 / GPT 5.4 / Gemini 3.0 Pro / DeepSeek V3.2</td><td>~3-6k / 家</td><td><strong>~16-24k</strong></td></tr>
+          <tr><td>R2 挑战</td><td>4 并发</td><td>同 R1（input 偏长 1.5×）</td><td>~5-9k / 家</td><td><strong>~24-36k</strong></td></tr>
+          <tr><td>R3 反驳</td><td>~2.5</td><td>被挑战方</td><td>~4-7k</td><td><strong>~10-18k</strong></td></tr>
+          <tr><td>R4 裁判</td><td>~2.5</td><td><code>claude-opus-4.7-1m</code></td><td>~6-10k</td><td><strong>~15-25k</strong></td></tr>
+          <tr><td>WorkBuddy 主智能体编排</td><td>5-8 次</td><td><strong>当前会话模型</strong>（顶部选择器决定）</td><td>~3-8k / 次</td><td><strong>~20-65k</strong></td></tr>
+          <tr><td>R1 视觉 token（仅 r1_only）</td><td>4</td><td>视觉编码</td><td>~1-2k / 家</td><td><strong>~4-8k</strong></td></tr>
+        </tbody>
+      </table>
+      <p class="cost-modal-note cost-modal-note-sub">
+        💡 主智能体编排成本"自动跟随会话当前模型"——不在 moco 代码里写死。
+        切到 Sonnet 4.6 1M 即可减半，无需改任何 moco 代码。
+      </p>
+
+      <h3 class="cost-modal-h3">表 2：消耗对照（含基准）</h3>
+      <table class="cost-modal-table">
+        <thead><tr><th>模式</th><th>等效 token 量级</th><th>相对单次质询</th></tr></thead>
+        <tbody>
+          <tr><td>🟦 单次 WorkBuddy 质询基准（200/1000 字）</td><td>~3-8k</td><td>1×</td></tr>
+          <tr><td>🟢 纯文字 moco</td><td>~85-160k</td><td><strong>+20× 量级</strong></td></tr>
+          <tr><td>🔵 r1_only moco（默认带图）</td><td>~90-170k</td><td><strong>+22× 量级</strong></td></tr>
+        </tbody>
+      </table>
+
+      <h3 class="cost-modal-h3">表 3：主流模型单次质询 token 量级</h3>
+      <table class="cost-modal-table">
+        <thead><tr><th>模型</th><th>单次量级</th><th>推荐用途</th></tr></thead>
+        <tbody>
+          <tr><td><code>claude-opus-4.7-1m</code></td><td>~6-10k</td><td>复杂架构 / moco 编排 / 重度推理</td></tr>
+          <tr><td><code>claude-sonnet-4.6-1m</code> ⭐</td><td>~3-6k</td><td><strong>日常推荐</strong></td></tr>
+          <tr><td><code>claude-haiku-4.5</code></td><td>~1-3k</td><td>简单批处理 / 极致省钱</td></tr>
+          <tr><td><code>gpt-5.4</code></td><td>~3-6k</td><td>客观说明文风格</td></tr>
+          <tr><td><code>gemini-3.0-pro</code></td><td>~3-6k</td><td>结构化偏好</td></tr>
+          <tr><td><code>deepseek-v3-2-volc-ioa</code></td><td>~2-4k</td><td>严密推理 / 国产首选</td></tr>
+        </tbody>
+      </table>
+
+      <p class="cost-modal-note cost-modal-note-sub">
+        完整版本与历史变更记录：<a href="https://github.com/MoneyMoneyGo/moco-skill/blob/main/COST_REFERENCE.md" target="_blank" rel="noopener">COST_REFERENCE.md @ GitHub</a>
+      </p>
+    </div>
+  </div>
 </div>
 
 <button class="back-to-top" id="backToTop" aria-label="回到顶部" title="回到顶部"><span class="back-to-top-icon">↑</span></button>
@@ -2480,6 +2621,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
   window.addEventListener('resize', update);
   update();
+})();
+</script>
+
+<script>
+// ===== COST MODAL LOGIC =====
+// footer 「📊 积分消耗 ⓘ」点击 → 弹出 modal；Esc / 遮罩 / ✕ 关闭。
+(function () {
+  var trigger = document.getElementById('footerCostTrigger');
+  var modal   = document.getElementById('costModal');
+  var overlay = document.getElementById('costModalOverlay');
+  var closeBtn = document.getElementById('costModalClose');
+  if (!trigger || !modal) return;
+
+  function open() {
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    modal.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  trigger.addEventListener('click', open);
+  if (overlay) overlay.addEventListener('click', close);
+  if (closeBtn) closeBtn.addEventListener('click', close);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !modal.hidden) close();
+  });
 })();
 </script>
 

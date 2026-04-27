@@ -597,6 +597,17 @@ Instructions:
 | V4 | R3 attached image 但 R2 没声明 needs | exit 3 |
 | V5 | r1_only 模式下声明了 needs 但实际没传 | exit 3 |
 
+## 积分消耗参考（COST_REFERENCE.md）
+
+详细的积分消耗对照表（含 R1-R4 各阶段、主智能体编排、单次质询基准、主流模型对照）见仓库根目录的 `COST_REFERENCE.md`，也通过 moco HTML 报告页底部"📊 积分消耗 ⓘ"按钮内嵌呈现给读者。
+
+要点速览：
+- moco 单次约等于 **20× 单次质询**（量级）
+- 主智能体编排成本"自动跟随会话当前模型"，切 Sonnet 4.6 1M 即可减半
+- r1_only vs 纯文字差距 < 10%
+
+所有数字均按 200 字 prompt + 1000 字 output 标准估算，token 数为"等效 input"（output 已按 5× 折算），±30% 误差。
+
 ## Model Color Scheme
 
 Use these colors for model badges:

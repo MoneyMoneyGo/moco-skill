@@ -9,6 +9,28 @@
 
 ---
 
+## 2026.04.27.6 — 极简 vision-header + 内嵌积分消耗参考
+
+### Behavior
+
+- **vision-header 极简化**（方案 A）：删除"输入" label、`vision_mode` pill、4 家 image_seen ✓ 列表，**只保留缩略图**。所有元信息（vision_mode + image_seen 状态）藏进缩略图的 `title` tooltip，hover 可见。`build_vision_header()` 函数从 ~80 行砍到 ~30 行；CSS 删了 `.vision-header-mode` / `.vision-header-seen-*` / `.vision-header-label` 全套。
+- **HTML 报告页 footer 新增"📊 积分消耗 ⓘ"入口**：点击弹出 modal，展示 3 张积分消耗参考表（moco 各阶段细节、消耗对照含基准、主流模型单价）。Esc / 遮罩 / ✕ 关闭。所有数字以 token 量级 + 范围给出（±30%），不锁死具体值。
+- **新增 `COST_REFERENCE.md`** 在仓库根目录，作为 modal 内容的源头文档，可独立浏览。
+- **SKILL.md 加"积分消耗参考"段**，引用 COST_REFERENCE.md + 速览要点。
+
+### 设计原则
+
+- "是否带图"用户从缩略图本身就能看到，不需要文字 label
+- vision_mode 是开发者关心的内部状态，不该作为 UI 一等公民
+- 异常分支（image_seen=false）已被 V3 校验在 HTML 生成前拦死，所以"✓✓✓✓"是死代码
+- 弹窗 modal 复用现有 design tokens（`--text-meta` / `--gap-block-s` / `--hover-bg`），不引入新色板
+
+### Fix
+
+- 13/13 回归 fixture 全绿（含 fix-v1-bad-mode-full）。
+
+---
+
 ## 2026.04.27.5 — 默认阵容换血：DeepSeek V3.2 替换 GLM-4.7
 
 ### Breaking

@@ -477,80 +477,48 @@ def build_roster():
 
 
 def build_vision_header():
-    """硬约束 B 渲染：原图缩略图 + vision_mode 标签 + 4 家 image_seen 状态。
+    """硬约束 B 渲染（v2026.04.27.6 极简化）：只展示原图缩略图。
+
+    设计原则（银纸 2026-04-27 20:35 锁定）：
+    - "是否带图" 用户从缩略图本身就能看到 → 不需要 "输入" label
+    - vision_mode 是开发者状态 → 不该作为 UI 一等公民
+    - "各家所见 ✓✓✓✓" 是死代码（V3 校验在 HTML 生成前就拦了 false 情况）
+    - 鼠标 hover 缩略图 → tooltip 暴露 vision_mode 等元信息（开发者可查）
 
     渲染策略：
-    - 旧数据（无 vision_mode 字段且无 question_image_paths）→ 返回空字符串，不破坏布局。
-    - vision_mode=none 但又没图 → 也返回空字符串。
-    - 否则渲染完整的 vision-header strip。
+    - 旧数据（无 vision_mode 字段且无 question_image_paths）→ 返回空字符串
+    - vision_mode=none 但又没图 → 也返回空字符串
+    - 否则只渲染缩略图（点击放大；hover 显示 vision_mode + 各家所见状态）
     """
     if not VISION_MODE and not QUESTION_IMAGE_PATHS:
         return ""
     if VISION_MODE == "none" and not QUESTION_IMAGE_PATHS:
         return ""
+    if not QUESTION_IMAGE_PATHS:
+        return ""
 
-    # 缩略图：用 file:// 相对路径直接引用本地图（HTML 在工作区，图也在工作区）
-    thumbs_html = ""
-    if QUESTION_IMAGE_PATHS:
-        thumb_imgs = []
-        for p in QUESTION_IMAGE_PATHS:
-            # 提取 basename，让 HTML 用相对路径加载（前提是 HTML 与图同目录或子目录可访问）
-            from pathlib import Path as _P
-            rel = _P(p).name
-            esc = html_escape(rel)
-            full_esc = html_escape(p)
-            thumb_imgs.append(
-                f'<a href="{full_esc}" target="_blank" rel="noopener" title="点击查看原图">'
-                f'<img class="vision-header-thumb" src="{full_esc}" alt="原始问题图：{esc}" />'
-                f'</a>'
-            )
-        thumbs_html = (
-            f'<div class="vision-header-thumbs">'
-            f'<span class="vision-header-label">输入</span>'
-            + "".join(thumb_imgs)
-            + '</div>'
-        )
-
-    # vision_mode 标签
+    # tooltip 文案（藏在 title 属性里）：vision_mode + 各家 image_seen 状态
     mode = VISION_MODE or "none"
-    mode_label_map = {
-        "r1_only": "R1_ONLY · 仅首轮带图",
-        "none":    "NONE · 纯文本",
-    }
-    mode_html = (
-        f'<span class="vision-header-label">vision_mode</span>'
-        f'<span class="vision-header-mode vision-header-mode--{mode}">'
-        f'{mode_label_map.get(mode, mode)}'
-        f'</span>'
-    )
-
-    # image_seen 状态：4 家逐一渲染 ✓/✗ 符号
-    seen_items = []
+    seen_summary_parts = []
     for m in MODELS:
-        name = m.get("name", "?")
         seen = m.get("image_seen")
-        if seen is True:
-            sym = '<span class="ok">✓</span>'
-        elif seen is False:
-            sym = '<span class="ng">✗</span>'
-        else:
-            sym = '<span class="ng">?</span>'
-        seen_items.append(
-            f'<span class="vision-header-seen-item">{sym} {html_escape(name)}</span>'
+        sym = "✓" if seen is True else ("✗" if seen is False else "?")
+        seen_summary_parts.append(f"{sym} {m.get('name', '?')}")
+    tooltip = f"vision_mode={mode} · {' / '.join(seen_summary_parts)} · 点击查看原图"
+
+    thumb_imgs = []
+    for p in QUESTION_IMAGE_PATHS:
+        full_esc = html_escape(p)
+        thumb_imgs.append(
+            f'<a href="{full_esc}" target="_blank" rel="noopener" title="{html_escape(tooltip)}">'
+            f'<img class="vision-header-thumb" src="{full_esc}" alt="问题原图" />'
+            f'</a>'
         )
-    seen_html = (
-        f'<div class="vision-header-seen">'
-        f'<span class="vision-header-label">各家所见</span>'
-        + "".join(seen_items)
-        + '</div>'
-    )
 
     return (
         f'<div class="vision-header">'
-        f'{thumbs_html}'
-        f'<div class="vision-header-mode-wrap">{mode_html}</div>'
-        f'{seen_html}'
-        f'</div>'
+        + "".join(thumb_imgs)
+        + '</div>'
     )
 
 
