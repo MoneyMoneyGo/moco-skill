@@ -9,6 +9,26 @@
 
 ---
 
+## 2026.04.27.15 — 新增 S5 软校验 + 修 fixture 遗留的 GLM 旧名
+
+### Behavior
+
+- **新增 S5 软校验**：`challenges_issued ↔ challenges_received` 对偶配对一致性
+  - 遍历每个 attacker.challenges_issued[*].target，去 target.challenges_received 找 from=attacker 的条目，找不到就告警
+  - 反向同理（target 列了某 from 但 attacker 没 issued）
+  - **不阻断 HTML 生成**（soft warn），exit 0
+  - 用途：当主智能体因模型改名/笔误导致 from/target 不一致时，控制台立刻报警
+  - 触发示例：`S5 orphan challenges_issued ... DeepSeek V3.2 → GPT-5.4. Clash 卡片将显示'未反驳'，通常是 from/target 名字不一致（如模型改名未同步）。`
+
+### Fix
+
+- **修 `moco-regression-tests/fix-vision-healthy.json` 里的 GLM 旧名遗留**：
+  - `GPT.challenges_received[1].from`：`"GLM-4.7"` → `"DeepSeek V3.2"`
+  - rebuttal 正文中的"感谢 GLM-4.7 的指榷"同步改为"感谢 DeepSeek V3.2 的指榷"
+  - 这是 v5（GLM → DeepSeek 换阵容）时漏改的 fixture，导致 DeepSeek 挑战 GPT 那条 clash 显示"未反驳"
+
+---
+
 ## 2026.04.27.14 — footer 链接样式并入全局范式 + 银纸链接重指
 
 ### Behavior

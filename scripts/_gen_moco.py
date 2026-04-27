@@ -243,6 +243,7 @@ def validate_debate_data(data):
       S2. Missing utc field on any model.
       S3. Round 1 utc values fully identical (sync watermark).
       S4. Top-level run_start / run_end missing.
+      S5. challenges_issued ↔ challenges_received 对偶不匹配（from/target 名字不一致）。
     """
     models = data.get("models", [])
     if not isinstance(models, list) or not models:
@@ -343,6 +344,56 @@ def validate_debate_data(data):
         _warn("S4 missing top-level 'run_start' (ISO 8601 UTC of orchestration start).")
     if not data.get("run_end"):
         _warn("S4 missing top-level 'run_end' (ISO 8601 UTC of orchestration end).")
+
+    # ----- Soft S5: challenges_issued ↔ challenges_received 对偶配对 -----
+    # For every (attacker, target) pair declared in attacker.challenges_issued,
+    # there should be a matching entry in target.challenges_received with from=attacker.
+    # Mismatches usually mean stale data (model renamed, e.g. GLM-4.7 → DeepSeek V3.2)
+    # or typo in from/target name. Rendering still works but the clash card will
+    # show "未反驳" because rebuttal lookup fails.
+    by_name = {m.get("name"): m for m in models if m.get("name")}
+    orphan_issued = []  # attacker declares challenge but target has no matching received
+    orphan_received = []  # target has received but attacker doesn't declare issued
+    for attacker in models:
+        atk_name = attacker.get("name", "")
+        for c in attacker.get("challenges_issued", []) or []:
+            target_name = c.get("target", "")
+            target = by_name.get(target_name)
+            if not target:
+                orphan_issued.append(f"{atk_name} → {target_name} (target model not found)")
+                continue
+            matched = any(
+                (rc.get("from") == atk_name)
+                for rc in (target.get("challenges_received", []) or [])
+            )
+            if not matched:
+                orphan_issued.append(f"{atk_name} → {target_name}")
+    for target in models:
+        tgt_name = target.get("name", "")
+        for rc in target.get("challenges_received", []) or []:
+            attacker_name = rc.get("from", "")
+            attacker = by_name.get(attacker_name)
+            if not attacker:
+                orphan_received.append(f"{attacker_name} → {tgt_name} (attacker model not found)")
+                continue
+            matched = any(
+                (c.get("target") == tgt_name)
+                for c in (attacker.get("challenges_issued", []) or [])
+            )
+            if not matched:
+                orphan_received.append(f"{attacker_name} → {tgt_name}")
+    if orphan_issued:
+        _warn(
+            "S5 orphan challenges_issued (declared by attacker but no matching entry in target.challenges_received): "
+            + ", ".join(orphan_issued)
+            + ". Clash 卡片将显示'未反驳'，通常是 from/target 名字不一致（如模型改名未同步）。"
+        )
+    if orphan_received:
+        _warn(
+            "S5 orphan challenges_received (target lists rebuttal but attacker's challenges_issued doesn't declare it): "
+            + ", ".join(orphan_received)
+            + ". 会走 safety-net fallback 渲染，但顶部摘要统计可能不准。"
+        )
 
     # =========================================================================
     # V1-V5: vision (multimodal) hard checks — 银纸 2026-04-27 18:32 锁定
