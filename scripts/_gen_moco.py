@@ -1384,3 +1384,4 @@ with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
     f.write(template)
 
 print(f"OK: {OUTPUT_PATH}")
+print(f"   💡 推荐在浏览器以 ≥ 1280px 宽度打开，可看到'主卡左 + 3 次卡右'的完整布局（< 1081px 会触发响应式单列）。")

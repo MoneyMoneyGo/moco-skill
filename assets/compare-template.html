@@ -107,6 +107,43 @@
     text-align: center;
   }
 
+  /* ===== VIEWPORT HINT (1081px 以下友好提醒) ===== */
+  .viewport-hint {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-inline);
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #FEF3C7, #FED7AA);
+    border-bottom: 1px solid #F59E0B;
+    font-size: var(--text-meta);
+    color: #92400E;
+    font-weight: 500;
+    animation: viewport-hint-slide-in 0.3s ease-out;
+  }
+  .viewport-hint[hidden] { display: none !important; }
+  .viewport-hint-icon { font-size: 18px; font-weight: bold; }
+  .viewport-hint-text strong { color: #7C2D12; font-weight: 700; }
+  .viewport-hint-dismiss {
+    background: transparent;
+    border: none;
+    color: #92400E;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .viewport-hint-dismiss:hover { background: rgba(0,0,0,0.08); }
+  @keyframes viewport-hint-slide-in {
+    from { transform: translateY(-100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
   .header-label {
     font-size: var(--text-micro);
     color: var(--text-light);
@@ -2345,6 +2382,17 @@ document.addEventListener('DOMContentLoaded', function() {
 </head>
 <body>
 
+<!-- 窗口太窄提醒：当视口 < 1081px 时出现，拉宽后自动消失。
+     1081px 是主卡左/副卡右布局的触发阈值（见 @media max-width: 1080px）。 -->
+<div class="viewport-hint" id="viewportHint" hidden>
+  <span class="viewport-hint-icon">↔</span>
+  <span class="viewport-hint-text">
+    当前窗口 <strong id="vpHintWidth"></strong>px，
+    建议拉宽到 <strong>1280px</strong> 以启用"主卡左 + 3 次卡右"的推荐布局。
+  </span>
+  <button class="viewport-hint-dismiss" id="viewportHintDismiss" aria-label="关闭提示">×</button>
+</div>
+
 <div class="hero">
   <div class="header-label">MoCompare · {{TIMESTAMP}} <span class="mode-switch" role="tablist" aria-label="模式切换"><button type="button" class="mode-switch-btn active" data-mode="debate" role="tab" aria-selected="true">⚔️ Debate</button><button type="button" class="mode-switch-btn" data-mode="compare" role="tab" aria-selected="false">⚖️ Compare</button></span></div>
   <div class="question">{{QUESTION}}</div>
@@ -2404,6 +2452,35 @@ document.addEventListener('DOMContentLoaded', function() {
     requestAnimationFrame(step);
   });
   onScroll();
+})();
+</script>
+
+<script>
+// ===== VIEWPORT HINT LOGIC =====
+// 在视口 < 1081px 时显示横幅；拉宽后自动隐藏；用户点 × 关闭后本次会话不再出现。
+(function () {
+  var MIN_WIDTH = 1081;
+  var hint = document.getElementById('viewportHint');
+  var widthSpan = document.getElementById('vpHintWidth');
+  var dismissBtn = document.getElementById('viewportHintDismiss');
+  if (!hint || !widthSpan || !dismissBtn) return;
+
+  var dismissed = false;
+
+  function update() {
+    if (dismissed) { hint.hidden = true; return; }
+    var vw = window.innerWidth || document.documentElement.clientWidth;
+    widthSpan.textContent = vw;
+    hint.hidden = (vw >= MIN_WIDTH);
+  }
+
+  dismissBtn.addEventListener('click', function () {
+    dismissed = true;
+    hint.hidden = true;
+  });
+
+  window.addEventListener('resize', update);
+  update();
 })();
 </script>
 

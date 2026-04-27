@@ -478,7 +478,8 @@ Build an HTML page using `assets/compare-template.html` as base. The page MUST i
 
 1. Show preview via `preview_url`
 2. Deliver HTML file via `deliver_attachments`
-3. In text summary, briefly mention:
+3. **Recommend viewport width ≥ 1280px**（重要）—— 调 `preview_url` 之后，在给用户的文字回复里**显式提示一句**："推荐在浏览器以 ≥ 1280px 宽度打开，可看到'主卡左 + 3 次卡右'的完整布局（< 1081px 会触发响应式单列）。" HTML 本身带了 viewport hint 横幅，但文字提醒能避免用户在窄窗口误判。
+4. In text summary, briefly mention:
    - The 4 models compared
    - Which challenges were issued and between whom
    - Which model is recommended and why
