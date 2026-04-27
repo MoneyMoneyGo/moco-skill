@@ -9,6 +9,21 @@
 
 ---
 
+## 2026.04.27.14 — footer 链接样式并入全局范式 + 银纸链接重指
+
+### Behavior
+
+- **footer 链接样式并入全局 `.full-answer a` 范式**：
+  - 去掉 dotted underline → 改为 `color: var(--accent)` + **无默认下划线**
+  - hover 时 `border-bottom-color: var(--accent-border-hover)` 显出淡蓝色 1px 细线
+  - 积分消耗按钮也统一这个范式（删除 background/padding/border-radius）
+  - 好处：和正文链接（`.full-answer a`）视觉语言一致，整份报告只有一种链接交互
+- **银纸链接从 GitHub 个人主页改指 moco-skill repo 主页**：
+  - `https://github.com/MoneyMoneyGo` → `https://github.com/MoneyMoneyGo/moco-skill`
+  - 新用户点进去直接看到 MoCo 项目本身，转化更精准
+
+---
+
 ## 2026.04.27.13 — 复制水印 + toast 文案 + 粘贴回流感知
 
 ### Behavior
