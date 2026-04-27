@@ -22,6 +22,58 @@ Finally, compose everything (answers + paired clashes + verdicts) into a beautif
 
 ## Workflow
 
+### Step 0: Pre-Run Update Check（银纸 2026-04-27 锁定）
+
+在启动任何 moco 流程（Round 1 发图之前）之前，主智能体**必须**先调用一次：
+
+```bash
+python3 <skill_root>/scripts/_gen_moco.py --update-check-only
+```
+
+该命令会：
+- 读取本地 `<skill_root>/VERSION`
+- 拉取远端 `https://raw.githubusercontent.com/MoneyMoneyGo/moco-skill/main/VERSION`
+- 对比两者（格式 `YYYY.MM.DD.N`）
+
+**退出码解读与动作**：
+
+| exit | 含义 | 主智能体应该做什么 |
+|---|---|---|
+| 0 | 本地与远端一致（或本地更新） | 静默继续（不用告知用户）|
+| 10 | 远端更新 | **必须**在启动 moco 前告知用户，问 3 个选项：① 立即拉更新再跑 ② 跳过此次更新直接跑 ③ 看 CHANGELOG 再决定；若 CHANGELOG 含 Breaking，**不可静默**，必须强提醒 |
+| 11 | 检查失败（离线/超时/URL 404） | 告知用户"Update Check 失败，按当前本地版本继续"，允许继续 |
+
+**选项触发的具体动作**：
+
+- 选项 ①：在 `<skill_root>` 执行 `git pull`（需要 token-in-URL 或 `gh auth setup-git`），pull 成功后继续 moco；失败则降级为选项 ②。
+- 选项 ②：直接继续，不改本地版本号；下次跑 moco 会再次弹同一提示。
+- 选项 ③：把 `https://github.com/MoneyMoneyGo/moco-skill/blob/main/CHANGELOG.md` 里自 local_version 起的记录贴给用户看，然后再问 ①/②。
+
+**运行日志字段**（主智能体应在当次 moco 的调用日志里记录）：
+
+```json
+{
+  "update_check": {
+    "local_version": "...",
+    "latest_version": "...",
+    "comparison": "equal" | "remote_newer" | "local_newer" | "unknown",
+    "prompt_shown": true|false,
+    "user_choice": 1|2|3|null,
+    "update_result": "success" | "skipped" | "failed" | null
+  }
+}
+```
+
+**跳过 Update Check 的合法场景**（传 `--skip-update-check`）：
+
+- 回归测试内部调用（`moco-regression-tests/fix-*.json`）
+- 离线环境且用户已经确认"知道离线，直接跑"
+- 某个 CI/batch 任务明确声明不在乎版本
+
+**Update Check 不阻断渲染**：即便 exit 10/11，主智能体仍然可以继续让 `_gen_moco.py` 正常生成 HTML（只要用户同意选项 ② 或 ③）。Gate 是"告知机制"而不是"强行拦截"——Breaking 强提醒除外。
+
+---
+
 ### Step 1: Identify the Question
 
 Extract the user's question from the conversation. If no question is provided, ask what to ask.

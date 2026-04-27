@@ -9,6 +9,20 @@
 
 ---
 
+## 2026.04.27.2 — Pre-Run Update Check 生效
+
+### Behavior
+
+- **SKILL.md 新增 Step 0 段**，要求主智能体在启动 moco 前调用 `python3 _gen_moco.py --update-check-only`，退出码 0/10/11 各有明确动作：相等静默、远端更新弹 3 选 1（含 CHANGELOG 链接）、检查失败告警但允许继续。
+- **`_gen_moco.py` 新增两个 CLI flag**：`--update-check-only`（只检查不渲染，退出码专用 0/10/11）和 `--skip-update-check`（回归测试/离线场景跳过）。
+- **Update Check 不阻断渲染**：即便远端有更新，主智能体仍可继续渲染，Gate 是"告知机制"而非强行拦截。Breaking 改动除外——必须强提醒。
+
+### Fix
+
+- 修复 `--data` / `--output` 在 `--update-check-only` 时不应为必填参数。
+
+---
+
 ## 2026.04.27.1 — 初始公开版
 
 ### Breaking
