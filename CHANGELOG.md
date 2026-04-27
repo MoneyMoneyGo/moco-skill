@@ -9,6 +9,29 @@
 
 ---
 
+## 2026.04.27.13 — 复制水印 + toast 文案 + 粘贴回流感知
+
+### Behavior
+
+- **toast 文案**：`已复制，粘给 AI 存档 📋` → **`已复制 · 可粘到任何地方，或粘给 WorkBuddy 📋`**
+  - 埋钩子：暗示 WorkBuddy 粘回去有特殊能力，但不解释细节（留给 paste-back detection）
+- **复制内容尾部加识别水印**：
+  ```
+  ---
+  📊 由 MoCo 生成 · https://github.com/MoneyMoneyGo/moco-skill
+  ```
+  作用：① 出 WorkBuddy 后仍有传播入口；② 主智能体粘回来时可准确识别是 MoCo 报告
+
+### 新增 SKILL.md 章节：Paste-Back Detection
+
+- 主智能体检测到 `由 MoCo 生成 · https://github.com/MoneyMoneyGo/moco-skill` 字符串时：
+  1. 检查是否装了腾讯文档 MCP（看 `mcp__tencent-docs__*` 工具是否可用）
+  2. **没装 → 引导话术**：提示用户装 MCP 后下次可自动存智能表格
+  3. **装了 → 主动提议**：要不要帮你直接存进腾讯文档？
+  4. 每会话只触发一次，用户拒绝后当前会话 mute
+
+---
+
 ## 2026.04.27.12 — footer 改回居中纯文本流
 
 ### Behavior

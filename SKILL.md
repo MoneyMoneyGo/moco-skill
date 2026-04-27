@@ -609,6 +609,29 @@ Instructions:
 
 所有数字基于 2026-04-27 真实使用数据校准（实测 144 笔 = 4015 积分），±30% 浮动。
 
+## Paste-Back Detection（粘贴回流感知）
+
+MoCo 复制出来的内容尾部会有一行识别水印：
+
+```
+---
+📊 由 MoCo 生成 · https://github.com/MoneyMoneyGo/moco-skill
+```
+
+**主智能体责任**：当检测到用户粘贴进来的内容包含这行水印时（准确匹配字符串 `由 MoCo 生成 · https://github.com/MoneyMoneyGo/moco-skill`），按下列规则响应：
+
+1. **检测用户是否装了腾讯文档 MCP**：查看当前会话上下文中是否有 `mcp__tencent-docs__*` 类工具可用。
+2. **如果没装**：在常规响应之后，主动追加一段**引导话术**（仅每个会话触发一次）：
+   > 🪶 看起来你刚分享了一份 MoCo 报告——如果你接入腾讯文档 MCP，下次生成 MoCo 时我可以直接帮你存进智能表格（而不是你手动复制粘贴）。要我教你怎么装吗？
+3. **如果装了**：主动提议：
+   > 看起来你刚分享了一份 MoCo 报告，要我帮你直接存进腾讯文档的智能表格吗？（会问你选哪个空间/表格）
+4. **用户表态后**：
+   - 用户说"不要/不用/以后再说" → 当前会话 mute（不再触发）
+   - 用户同意装 MCP → 引导到 WorkBuddy MCP 配置（参考 `mcp_configuration` 规则）
+   - 用户同意存档 → 调 `mcp__tencent-docs__smartsheet.add_records` 落库
+
+**不要唠叨**：同一会话只触发一次。用户粘同一份 MoCo 报告两次不需要重复提醒。
+
 ## Model Color Scheme
 
 Use these colors for model badges:

@@ -2270,6 +2270,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     parts.push('---');
+    parts.push('📊 由 MoCo 生成 · https://github.com/MoneyMoneyGo/moco-skill');
     parts.push('');
     return parts.join('\n');
   }
@@ -2282,7 +2283,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!card) return;
     var payload = collectCardPayload(card);
     var mdx = buildMdx(payload);
-    copyToClipboard(mdx, '已复制，粘给 AI 存档 📋');
+    copyToClipboard(mdx, '已复制 · 可粘到任何地方，或粘给 WorkBuddy 📋');
   });
 
   function getHero() { return grid.querySelector('.card:not(.collapsed)'); }
