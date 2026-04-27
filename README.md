@@ -54,7 +54,7 @@ MoCo 一次约等于 **~250-700 积分**（≈ 25× 单次质询），详细见 
 | `scripts/_gen_moco.py` | HTML 报告生成器 + 数据校验（H1-H4 硬校验 + S1-S5 软告警 + V1-V5 多模态校验） |
 | `scripts/check_lineup.py` | 阵容一致性门禁（换模型时守门员） |
 | `assets/compare-template.html` | HTML 报告模板 |
-| `examples/` | 历史示例报告 |
+| `examples/moco-logic-training-2026-04-27.html` | 一份完整的示例报告（"如何更好地训练逻辑能力？"，4 模型辩论 + 裁判判词） |
 | `moco-regression-tests/` | 回归测试 fixture（13 份正负样本） |
 | `COST_REFERENCE.md` | 积分消耗参考表 |
 | `CHANGELOG.md` | 版本变更记录 |

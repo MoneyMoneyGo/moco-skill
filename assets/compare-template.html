@@ -165,22 +165,6 @@
     color: var(--text-dim);
   }
 
-  .debate-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--gap-tight);
-    font-size: var(--text-micro);
-    font-weight: 600;
-    color: var(--challenge-red);
-    background: var(--challenge-red-bg);
-    padding: 0.2em 0.65em;
-    border-radius: var(--radius);
-    border: 1px solid var(--challenge-red-border);
-    margin-left: 0;
-    letter-spacing: var(--ls-tag);
-    vertical-align: middle;
-  }
-
   /* ===== MODE SWITCH (segmented control) ===== */
   .mode-switch {
     display: inline-flex;
@@ -929,15 +913,6 @@
     position: relative;
   }
 
-  /* Concept diagram — always visible at top */
-  .concept-diagram {
-    width: 100%;
-    height: auto;
-    border-radius: var(--radius);
-    margin-bottom: var(--gap-block-s);
-    display: block;
-  }
-
   /* Condensed answer text — default view */
   .condensed-answer {
     font-size: var(--text-body);
@@ -1367,15 +1342,7 @@
 
   .debate-panel-header .icon { font-size: var(--text-body); }
 
-  .debate-count {
-    margin-left: auto;
-    font-size: var(--text-micro);
-    font-weight: 500;
-    color: var(--text-light);
-  }
-
-  /* 主卡 panel header 战绩条：与副卡 .card-debate-record 同源数据，
-     居右对齐（替换原孤零零的 .debate-count）。
+  /* 主卡 panel header 战绩条：与副卡 .card-debate-record 同源数据，居右对齐。
      内部直接复用 .card-record-text / .card-record-bar 已有样式。 */
   .debate-panel-stat {
     margin-left: auto;

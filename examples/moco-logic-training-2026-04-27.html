@@ -6,7 +6,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MoCompare</title>
+<title>MoCo</title>
 <style>
   :root {
     /* ===== 基础调色板（11 个，语义色保留） ===== */
@@ -107,6 +107,43 @@
     text-align: center;
   }
 
+  /* ===== VIEWPORT HINT (1081px 以下友好提醒) ===== */
+  .viewport-hint {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-inline);
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #FEF3C7, #FED7AA);
+    border-bottom: 1px solid #F59E0B;
+    font-size: var(--text-meta);
+    color: #92400E;
+    font-weight: 500;
+    animation: viewport-hint-slide-in 0.3s ease-out;
+  }
+  .viewport-hint[hidden] { display: none !important; }
+  .viewport-hint-icon { font-size: 18px; font-weight: bold; }
+  .viewport-hint-text strong { color: #7C2D12; font-weight: 700; }
+  .viewport-hint-dismiss {
+    background: transparent;
+    border: none;
+    color: #92400E;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .viewport-hint-dismiss:hover { background: rgba(0,0,0,0.08); }
+  @keyframes viewport-hint-slide-in {
+    from { transform: translateY(-100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
   .header-label {
     font-size: var(--text-micro);
     color: var(--text-light);
@@ -121,20 +158,11 @@
     flex-wrap: wrap;
   }
 
-  .debate-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--gap-tight);
-    font-size: var(--text-micro);
+  .brand-name {
+    text-transform: none;
+    letter-spacing: 0;
     font-weight: 600;
-    color: var(--challenge-red);
-    background: var(--challenge-red-bg);
-    padding: 0.2em 0.65em;
-    border-radius: var(--radius);
-    border: 1px solid var(--challenge-red-border);
-    margin-left: 0;
-    letter-spacing: var(--ls-tag);
-    vertical-align: middle;
+    color: var(--text-dim);
   }
 
   /* ===== MODE SWITCH (segmented control) ===== */
@@ -295,6 +323,77 @@
     opacity: 0.6;
   }
 
+  /* ===== VISION HEADER (v2026.04.27.6 极简化) ===== */
+  /* 设计原则：是否带图用户从缩略图本身就看得到。vision_mode 等元信息藏进 hover tooltip，
+     不抢戏。异常分支（image_seen=false）已被 V3 校验在 HTML 生成前拦死，所以 UI 永远是"绿态"。 */
+  .vision-header {
+    display: flex;
+    justify-content: center;
+    gap: var(--gap-inline);
+    margin: var(--gap-block-s) auto 0;
+  }
+  /* 缩略图改为 button（v2026.04.27.8）触发页内 lightbox，避免开新 tab 体验割裂 */
+  .vision-header-thumb-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: zoom-in;
+    line-height: 0;
+  }
+  .vision-header-thumb {
+    height: 48px;
+    width: auto;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    transition: transform var(--motion-dur) var(--motion-ease);
+  }
+  .vision-header-thumb-btn:hover .vision-header-thumb { transform: scale(1.05); }
+
+  /* ===== IMAGE LIGHTBOX (page-internal full-screen image viewer) ===== */
+  .image-lightbox[hidden] { display: none; }
+  .image-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 250;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--gap-block-m);
+  }
+  .image-lightbox-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    cursor: zoom-out;
+    animation: cost-modal-fade 0.2s ease-out;
+  }
+  .image-lightbox-img {
+    position: relative;
+    max-width: 95vw;
+    max-height: 92vh;
+    border-radius: 4px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    animation: cost-modal-slide 0.25s ease-out;
+    cursor: zoom-out;
+  }
+  .image-lightbox-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: white;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 50%;
+    padding: 0;
+    z-index: 1;
+    transition: background var(--motion-dur) var(--motion-ease);
+  }
+  .image-lightbox-close:hover { background: rgba(255, 255, 255, 0.25); }
   /* ===== ROSTER BAR (now inside hero) ===== */
   .roster-section {
     margin: 0;
@@ -814,15 +913,6 @@
     position: relative;
   }
 
-  /* Concept diagram — always visible at top */
-  .concept-diagram {
-    width: 100%;
-    height: auto;
-    border-radius: var(--radius);
-    margin-bottom: var(--gap-block-s);
-    display: block;
-  }
-
   /* Condensed answer text — default view */
   .condensed-answer {
     font-size: var(--text-body);
@@ -1252,11 +1342,32 @@
 
   .debate-panel-header .icon { font-size: var(--text-body); }
 
-  .debate-count {
+  /* 主卡 panel header 战绩条：与副卡 .card-debate-record 同源数据，居右对齐。
+     内部直接复用 .card-record-text / .card-record-bar 已有样式。 */
+  .debate-panel-stat {
     margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gap-inline);
     font-size: var(--text-micro);
     font-weight: 500;
     color: var(--text-light);
+    letter-spacing: 0;       /* 覆盖 header 的 ls-tag，让数字不被拉开 */
+    text-transform: none;
+  }
+
+  /* 在 panel header 上下文里，让内嵌的 .card-record-text 字号与战绩条一致，
+     避免继承 header 的 font-weight:600 */
+  .debate-panel-stat .card-record-text {
+    font-weight: 500;
+    color: var(--text-light);
+  }
+  .debate-panel-stat .card-record-upheld {
+    font-weight: 600;        /* 后缀文案略加重，与副卡逻辑一致 */
+    color: var(--text-dim);
+  }
+  .debate-panel-stat .card-record-bar {
+    margin: 0;               /* header 里不要额外纵向间距 */
   }
 
   /* Debate items (hidden when collapsed) */
@@ -1565,10 +1676,156 @@
 
   /* ===== FOOTER ===== */
   .footer {
-    text-align: center;
     margin-top: var(--gap-canvas);
-    color: #c4c4c0;
+    color: var(--text-light);
     font-size: var(--text-meta);
+    text-align: center;
+    line-height: 1.8;
+  }
+  .footer-link {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color var(--motion-dur) var(--motion-ease);
+  }
+  .footer-link:hover { border-bottom-color: var(--accent-border-hover); }
+  .footer-divider { margin: 0 8px; opacity: 0.4; }
+  .footer-cost-trigger {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-size: var(--text-meta);
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+    border-bottom: 1px solid transparent;
+    transition: border-color var(--motion-dur) var(--motion-ease);
+  }
+  .footer-cost-trigger:hover { border-bottom-color: var(--accent-border-hover); }
+
+  /* ===== COST REFERENCE MODAL ===== */
+  .cost-modal[hidden] { display: none; }
+  .cost-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--gap-block-m);
+  }
+  .cost-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+    animation: cost-modal-fade 0.2s ease-out;
+  }
+  .cost-modal-card {
+    position: relative;
+    background: var(--bg, #fff);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    /* 自适应：在视口允许时变更宽，确保表格短词（如"4 并发" / "~16-24k"）能一行放下；
+       受 .cost-modal { padding: var(--gap-block-m) } 的限制不会触边。 */
+    max-width: min(960px, calc(100vw - 2 * var(--gap-block-m)));
+    width: 100%;
+    max-height: 85vh;
+    overflow: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    animation: cost-modal-slide 0.25s ease-out;
+  }
+  .cost-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--gap-block-m) var(--gap-block-m) var(--gap-block-s);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg, #fff);
+    z-index: 1;
+  }
+  .cost-modal-title {
+    margin: 0;
+    font-size: var(--text-strong, 16px);
+    font-weight: 700;
+    color: var(--text);
+  }
+  .cost-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 4px;
+    line-height: 1;
+    transition: background var(--motion-dur) var(--motion-ease);
+  }
+  .cost-modal-close:hover { background: var(--hover-bg); color: var(--text); }
+  .cost-modal-body { padding: var(--gap-block-s) var(--gap-block-m) var(--gap-block-m); }
+  .cost-modal-h3 {
+    margin: var(--gap-block-m) 0 var(--gap-block-s);
+    font-size: var(--text-body, 14px);
+    font-weight: 600;
+    color: var(--text);
+  }
+  .cost-modal-h3:first-child { margin-top: 0; }
+  .cost-modal-note {
+    font-size: var(--text-meta);
+    color: var(--text-dim);
+    line-height: 1.6;
+    margin: 0 0 var(--gap-block-s);
+  }
+  .cost-modal-note-sub { font-size: var(--text-micro); color: var(--text-light); }
+  .cost-modal-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--gap-block-s);
+    font-size: var(--text-meta);
+  }
+  .cost-modal-table th,
+  .cost-modal-table td {
+    text-align: left;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    /* 关键：默认不让短词换行（"4 并发" / "~16-24k" / "~2.5" 整体显示）。
+       内容里的长描述（含空格的英文/中文短句）通过 .cost-modal-table-wrap 类覆盖。 */
+    white-space: nowrap;
+  }
+  /* 长文本列允许换行：模型列、推荐用途列、备注列 */
+  .cost-modal-table td.wrap,
+  .cost-modal-table th.wrap {
+    white-space: normal;
+    min-width: 200px;
+  }
+  .cost-modal-table th {
+    font-weight: 600;
+    color: var(--text-dim);
+    background: var(--hover-bg, rgba(0,0,0,0.02));
+  }
+  .cost-modal-table code {
+    font-size: 0.9em;
+    background: var(--hover-bg, rgba(0,0,0,0.04));
+    padding: 1px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  /* 表格容器允许横向滚动兜底——窄屏极端情况不爆版 */
+  .cost-modal-table-scroll {
+    overflow-x: auto;
+    margin-bottom: var(--gap-block-s);
+  }
+  .cost-modal-table-scroll .cost-modal-table { margin-bottom: 0; }
+  @keyframes cost-modal-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes cost-modal-slide {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
   /* ===== RESPONSIVE ===== */
@@ -1658,7 +1915,7 @@
 <script id="MathJax-script" async
   src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <script>
-// MoCompare Card Swap Logic:
+// MoCo Card Swap Logic:
 // - Clicking a SIDEBAR (collapsed) card → promotes it to HERO position
 // - HERO card is NOT interactive
 document.addEventListener('DOMContentLoaded', function() {
@@ -1978,6 +2235,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     parts.push('---');
+    parts.push('📊 由 MoCo 生成 · https://github.com/MoneyMoneyGo/moco-skill');
     parts.push('');
     return parts.join('\n');
   }
@@ -1990,7 +2248,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!card) return;
     var payload = collectCardPayload(card);
     var mdx = buildMdx(payload);
-    copyToClipboard(mdx, '已复制，粘给 AI 存档 📋');
+    copyToClipboard(mdx, '已复制 · 可粘到任何地方，或粘给 WorkBuddy 📋');
   });
 
   function getHero() { return grid.querySelector('.card:not(.collapsed)'); }
@@ -2247,17 +2505,29 @@ document.addEventListener('DOMContentLoaded', function() {
 </head>
 <body>
 
+<!-- 窗口太窄提醒：当视口 < 1081px 时出现，拉宽后自动消失。
+     1081px 是主卡左/副卡右布局的触发阈值（见 @media max-width: 1080px）。 -->
+<div class="viewport-hint" id="viewportHint" hidden>
+  <span class="viewport-hint-icon">↔</span>
+  <span class="viewport-hint-text">
+    当前窗口 <strong id="vpHintWidth"></strong>px，
+    建议拉宽到 <strong>1280px</strong> 以启用"主卡左 + 3 次卡右"的推荐布局。
+  </span>
+  <button class="viewport-hint-dismiss" id="viewportHintDismiss" aria-label="关闭提示">×</button>
+</div>
+
 <div class="hero">
-  <div class="header-label">MoCompare · 2026-04-26 01:33 <span class="mode-switch" role="tablist" aria-label="模式切换"><button type="button" class="mode-switch-btn active" data-mode="debate" role="tab" aria-selected="true">⚔️ Debate</button><button type="button" class="mode-switch-btn" data-mode="compare" role="tab" aria-selected="false">⚖️ Compare</button></span></div>
-  <div class="question">平板支撑做 1 分钟是什么水平？</div>
+  <div class="header-label"><span class="brand-name">MoCo</span> · 2026-04-27 16:46 +0800 <span class="mode-switch" role="tablist" aria-label="模式切换"><button type="button" class="mode-switch-btn active" data-mode="debate" role="tab" aria-selected="true">⚔️ Debate</button><button type="button" class="mode-switch-btn" data-mode="compare" role="tab" aria-selected="false">⚖️ Compare</button></span></div>
+  <div class="question">如何更好地训练逻辑能力？</div>
+  
   <div class="hero-divider"></div>
   <div class="roster-section">
     <div class="roster-title">参与模型</div>
     <div class="roster">
     <div class="roster-item"><span class="roster-dot" style="background:#D97706"></span>Claude Sonnet</div>
-<div class="roster-item"><span class="roster-dot" style="background:#10A37F"></span>GPT-4o</div>
-<div class="roster-item"><span class="roster-dot" style="background:#4285F4"></span>Gemini</div>
-<div class="roster-item"><span class="roster-dot" style="background:#6B7280"></span>GLM-4</div>
+<div class="roster-item"><span class="roster-dot" style="background:#10A37F"></span>GPT-5.4</div>
+<div class="roster-item"><span class="roster-dot" style="background:#4285F4"></span>Gemini 3.0 Pro</div>
+<div class="roster-item"><span class="roster-dot" style="background:#7C3AED"></span>DeepSeek V3.2</div>
   </div>
   </div>
 </div>
@@ -2265,231 +2535,302 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="hero-summary">
   <div class="winner-banner">
     <span class="winner-icon">🏆</span>
-    <span class="winner-text">推荐回答：<span class="winner-model-name">Claude Sonnet</span> — <span class="winner-reason-compare">结论稳健（1 分钟=及格/普通偏上），分级表简洁不越界，引用 McGill 提示『超 2 分钟收益递减』帮助用户避免盲目刷时长。</span><span class="winner-reason-debate">答案本身结论稳健、分级表简洁不越界，引用 McGill 提示『超 2 分钟收益递减』帮助用户避免盲目刷时长；辩论环节进一步加分——精准指出 GLM-4 的吉尼斯数字错误、伪精确百分比与分级偏松三点，且自身未被挑战。</span></span>
+    <span class="winner-text">推荐回答：<span class="winner-model-name">Gemini 3.0 Pro</span> — <span class="winner-reason-compare">五维度框架最完整（基础工具库/输入源升级/刻意练习/输出倒逼/反馈闭环），跨学科硬核阅读+5 Whys+决策复盘形成闭环；批判性阅读三问与刻意练习有明确动作落地。</span><span class="winner-reason-debate">答案本身把'反馈闭环'独立成维度，刚好对应了'低效学习缺刻意验证'这个真问题；辩论环节进一步加分——主动出击挑战 GPT 颗粒度问题获胜，被 GPT 反向质疑分类冗余时也以'知/行同构'清晰反制，攻防两胜。</span></span>
   </div>
   <div class="hero-summary-debate-slot">
-    <div class="debate-summary"><span class="debate-summary-icon">⚔️</span><span class="debate-summary-text"><strong>辩论结果：</strong>三家围攻 <strong>GLM-4</strong>，GLM-4 打平 2 场、失守 1 场</span></div>
+    <div class="debate-summary"><span class="debate-summary-icon">⚔️</span><span class="debate-summary-text"><strong>辩论结果：</strong>两家围攻 <strong>GPT-5.4</strong>，GPT-5.4 全面落败</span></div>
   </div>
 </div>
 
 <div class="grid">
-  <div class="card recommended" data-model="Claude Sonnet"><div class="card-header"><div class="header-left"><span class="model-badge" style="background:#D97706"></span><span class="model-name">Claude Sonnet</span><span class="word-count">823 字</span><span class="recommended-tag">⭐ 推荐</span></div><div class="header-right"><button class="header-share-btn" data-model="Claude Sonnet" title="分享此回答"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>分享此回答</button><span class="expand-hint">主卡查看</span></div></div><div class="card-summary-wrap"><div class="card-summary-title">核心观点</div><div class="card-summary-text"><div class="condensed-answer"><p>1 分钟=『及格线』；质量比时长更重要；超 2 分钟收益递减</p></div></div></div><div class="card-debate-record"><span class="card-record-text"><span class="card-record-upheld suffix-strong-hold">未被挑战 ✌️</span></span></div><div class="card-body"><div class="card-full"><div class="answer-section"><div class="answer-content"><div class="condensed-answer"><p>1 分钟属于"及格线"水平，说明你有基本的核心力量基础，但距离"优秀"还有一定距离。这是大多数普通成年人经过短期训练就能达到的门槛。</p>
-<p>普通成年男性：建议能坚持 1 分 30 秒 – 2 分钟</p>
-<p>普通成年女性：能坚持 1 分钟 – 1 分 30 秒 即算不错</p>
-<p>军人 / 运动员标准：通常要求 2 分钟以上</p>
-<p>健身爱好者目标：稳定 2 – 3 分钟较为理想</p>
-<p>身体呈一条直线，不塌腰、不翘臀</p>
-<p>运动科学家 Stuart McGill 认为，单次平板支撑超过 2 分钟意义有限，不如改为多组短时 + 变式训练（侧平板、动态平板），效果更好。</p>
-<p>核心力量的评估还应结合侧平板、卷腹、俯卧撑等综合指标。</p>
-<p>能标准完成 1 分钟，说明你身体素质处于普通偏上的水平，继续训练 1 – 2 个月通常可以提升到 2 分钟。</p></div></div><div class="full-answer"><h1>平板支撑 1 分钟是什么水平？</h1>
-<h2>总体评价</h2>
-<p><strong>1 分钟属于"及格线"水平</strong>，说明你有基本的核心力量基础，但距离"优秀"还有一定距离。这是大多数普通成年人经过短期训练就能达到的门槛。</p>
-<h2>平板支撑水平分级参考</h2>
-<table>
-<tr><th>坚持时长</th><th>水平评级</th><th>说明</th></tr>
-<tr><td>< 30 秒</td><td>较差</td><td>核心力量明显不足，需加强训练</td></tr>
-<tr><td>30 秒 – 1 分钟</td><td>一般</td><td>普通水平，有基础但较弱</td></tr>
-<tr><td><strong>1 – 2 分钟</strong></td><td><strong>合格 / 良好</strong></td><td><strong>普通健身人群的正常水平</strong></td></tr>
-<tr><td>2 – 3 分钟</td><td>优秀</td><td>核心力量较强，规律训练者</td></tr>
-<tr><td>3 – 5 分钟</td><td>很强</td><td>接近运动员水准</td></tr>
-<tr><td>> 5 分钟</td><td>顶尖</td><td>专业水平，少数人能达到</td></tr>
-</table>
-<h2>不同人群的参考标准</h2>
-<ul>
-<li><strong>普通成年男性</strong>：建议能坚持 1 分 30 秒 – 2 分钟</li>
-<li><strong>普通成年女性</strong>：能坚持 1 分钟 – 1 分 30 秒 即算不错</li>
-<li><strong>军人 / 运动员标准</strong>：通常要求 2 分钟以上</li>
-<li><strong>健身爱好者目标</strong>：稳定 2 – 3 分钟较为理想</li>
-</ul>
-<h2>一些提醒</h2>
+  <div class="card recommended" data-model="Gemini 3.0 Pro"><div class="card-header"><div class="header-left"><span class="model-badge" style="background:#4285F4"></span><span class="model-name">Gemini 3.0 Pro</span><span class="word-count">734 字</span><span class="recommended-tag">⭐ 推荐</span></div><div class="header-right"><button class="header-share-btn" data-model="Gemini 3.0 Pro" title="分享此回答"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>分享此回答</button><span class="expand-hint">主卡查看</span></div></div><div class="card-summary-wrap"><div class="card-summary-title">核心观点</div><div class="card-summary-text"><div class="condensed-answer"><p>五维度系统：基础工具库 + 升级输入源 + 刻意练习 + 输出倒逼 + 反馈闭环。</p></div></div></div><div class="card-debate-record"><span class="card-record-text">被挑战 1 次 · <span class="card-record-upheld suffix-neutral">全部扛住</span></span><div class="card-record-bar"><span class="card-record-bar-cell fill-win"></span></div></div><div class="card-body"><div class="card-full"><div class="answer-section"><div class="answer-content"><div class="condensed-answer"><p>逻辑能力不仅是解决复杂问题的关键，也是清晰表达和高效决策的基础。要更好地训练逻辑能力，建议从以下五个维度构建系统的训练体系：</p>
+<p>区分基本推理方式：演绎（一般→个别）、归纳（个别→一般）、溯因（结果→原因）。</p>
+<p>建立"逻辑谬误"清单：滑坡、稻草人、诉诸人身、幸存者偏差、因果倒置等。</p>
+<p>运用经典结构化模型：MECE + 金字塔原理。</p>
+<p>跨学科硬核阅读：哲学（尤其逻辑学和科学哲学）、法学（证据与推理）、数学、经济学。</p>
+<p>批判性阅读法：核心论点是什么？给出哪些事实/论据？推导是否严密？是否存在隐含假设？</p>
+<p>学习编程语言：代码是逻辑的纯粹体现，机器不会妥协，哪怕一个符号错误程序也会崩溃，这种"即时且绝对的反馈"对训练逻辑极其有效。</p>
+<p>思维导图与流程图可视化：把网状思绪树状化、流程化。</p>
+<p>熟练运用"5 Whys"追问法：连续问 5 个为什么，剥洋葱直击根本原因。</p>
+<p>长文写作：必须精心安排大纲，确保段落起承转合。</p></div></div><div class="full-answer"><p>逻辑能力不仅是解决复杂问题的关键，也是清晰表达和高效决策的基础。要更好地训练逻辑能力，建议从以下五个维度构建系统的训练体系：</p>
+<h3>一、 掌握基础逻辑工具库</h3>
 <ol>
-<li><strong>质量比时长更重要</strong></li>
+<li><strong>区分基本推理方式</strong>：演绎（一般→个别）、归纳（个别→一般）、溯因（结果→原因）。</li>
+<li><strong>建立"逻辑谬误"清单</strong>：滑坡、稻草人、诉诸人身、幸存者偏差、因果倒置等。</li>
+<li><strong>运用经典结构化模型</strong>：MECE + 金字塔原理。</li>
+</ol>
+<h3>二、 升级高质量的输入源</h3>
+<ol>
+<li><strong>跨学科硬核阅读</strong>：哲学（尤其逻辑学和科学哲学）、法学（证据与推理）、数学、经济学。</li>
+<li><strong>批判性阅读法</strong>：核心论点是什么？给出哪些事实/论据？推导是否严密？是否存在隐含假设？</li>
+</ol>
+<h3>三、 通过硬核技能进行"刻意练习"</h3>
+<ol>
+<li><strong>学习编程语言</strong>：代码是逻辑的纯粹体现，机器不会妥协，哪怕一个符号错误程序也会崩溃，这种"即时且绝对的反馈"对训练逻辑极其有效。</li>
+<li><strong>思维导图与流程图可视化</strong>：把网状思绪树状化、流程化。</li>
+<li><strong>熟练运用"5 Whys"追问法</strong>：连续问 5 个为什么，剥洋葱直击根本原因。</li>
+</ol>
+<h3>四、 用"高强度输出"倒逼思维重构</h3>
+<ol>
+<li><strong>长文写作</strong>：必须精心安排大纲，确保段落起承转合。</li>
+<li><strong>费曼技巧</strong>：讲给门外汉听，卡壳即逻辑断层。</li>
+<li><strong>模拟辩论赛</strong>：极限压榨大脑逻辑运算速度。</li>
+</ol>
+<h3>五、 建立生活中的"逻辑反馈闭环"</h3>
+<ol>
+<li><strong>决策复盘</strong>：当时基于什么前提？前提是否被证明对错？是否受情绪干扰？</li>
+<li><strong>第一性原理思考</strong>：剥离表层现象，回到最本质条件从零推导。</li>
+</ol>
+<p>总结：通过持续地<strong>"警惕直觉、拆解结构、严密推导、反复验证"</strong>锻炼习惯。</p></div><button class="answer-toggle" data-wc="734">展开回答 · 734 字</button></div><div class="debate-panel has-content"><div class="debate-panel-header open"><span class="icon">⚔️</span><span>辩论面板</span><span class="debate-panel-stat"><span class="card-record-text">被挑战 1 次 · <span class="card-record-upheld suffix-neutral">全部扛住</span></span><div class="card-record-bar"><span class="card-record-bar-cell fill-win"></span></div></span></div><div class="debate-items"><div class="debate-item"><div class="debate-clash-preview"><div class="debate-clash-grid"><div class="debate-clash-cell debate-clash-cell--challenge"><div class="debate-clash-cell-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>GPT-5.4</strong></span></div><div class="debate-clash-summary">Gemini 维度重叠'第一性原理'重复，反馈闭环虚浮</div></div><div class="debate-clash-cell debate-clash-cell--rebuttal"><div class="debate-clash-cell-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span><span class="debate-winner-pill debate-winner-pill--rebuttal">胜</span></div><div class="debate-clash-summary">第一性原理兼作工具与校验非冗余；单列反馈击破低效学习盲区</div></div></div><div class="debate-verdict-preview"><span class="debate-verdict-prefix"><span class="debate-verdict-prefix-icon">🎯</span>裁判 · <strong>Claude Opus 4.7 (1M)</strong>：</span><span class="debate-verdict-summary">挑战方指出的分类重叠与'反馈'维度宽泛是合理批评，切中分类学严谨性问题。但反驳方以'知/行同构'区分静态模型与动态校验标准，逻辑层次更…</span></div><div class="debate-expand-trigger">查看完整观点</div></div><div class="debate-clash-full"><div class="debate-clash-full-block debate-clash-full-block--challenge"><div class="debate-clash-full-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>GPT-5.4</strong></span></div><div class="debate-clash-full-reason">分类维度存在内容重叠与冗余，'反馈闭环'维度定义模糊</div><div class="debate-clash-full-body"><p>（见对方 challenges_received）</p></div></div><div class="debate-clash-full-block debate-clash-full-block--rebuttal"><div class="debate-clash-full-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span><span class="debate-winner-pill debate-winner-pill--rebuttal">胜</span></div><div class="debate-clash-full-reason">第一性原理兼作工具与校验非冗余；单列反馈击破低效学习盲区</div><div class="debate-clash-full-body"><p>感谢 GPT-5.4 的质疑，但这恰恰暴露了其对系统性学习的机械线性理解。</p>
+<p><strong>首先，"知"与"行"的同构并非重叠。</strong> 第一性原理在"工具库"中是静态的认知模型（What），在"反馈闭环"中则是动态的校验标准（How）。这如同手里有一把尺子（工具），并在实践后用它去测量结果（反馈）。将核心原则在不同阶段的贯穿视为"冗余"，是强行割裂了理论与实践。</p>
+<p><strong>其次，"反馈"绝非自然发生的副产品。</strong> 你声称"任何学习都包含反馈"，这是极大的认知偏差。绝大多数低效学习的致命弱点，正是只有输入输出，却缺乏高质量的"刻意验证"（如市场检验、专家纠偏）。将其降级融入具体方法（如费曼技巧），只会让人继续沉浸在低维度的自嗨中。单列"反馈闭环"，正是为了确立其不可替代的系统级权重。</p>
+<p>边界绝对"清晰"的策略，往往会将有机的认知过程拆解成孤岛。真正的认知升级需要核心原则的全局贯穿与维度的动态咬合，而非死板的分类抽屉。</p></div></div><div class="debate-verdict-full"><div class="debate-verdict-full-header"><span class="debate-verdict-prefix-icon">🎯</span><span>裁判 · <strong>Claude Opus 4.7 (1M)</strong></span><span class="debate-verdict-score"><span class="debate-verdict-score-label">说服力</span><span class="debate-verdict-score-item debate-verdict-score-item--challenge">挑战方 <span class="debate-verdict-score-num">7</span></span><span class="debate-verdict-score-sep">/</span><span class="debate-verdict-score-item debate-verdict-score-item--rebuttal">反驳方 <span class="debate-verdict-score-num">8</span></span></span></div><div class="debate-verdict-full-body"><p>挑战方指出的分类重叠与'反馈'维度宽泛是合理批评，切中分类学严谨性问题。但反驳方以'知/行同构'区分静态模型与动态校验标准，逻辑层次更清晰，且有力论证了反馈作为系统级独立维度的必要性——指出多数低效学习的症结正在于缺乏刻意验证，这一经验观察具说服力，反制了'宽泛即虚浮'的指控。反驳略胜。</p></div></div></div></div></div></div></div></div></div>
+<div class="sidebar"><div class="card collapsed" data-model="Claude Sonnet"><div class="card-header"><div class="header-left"><span class="model-badge" style="background:#D97706"></span><span class="model-name">Claude Sonnet</span><span class="word-count">960 字</span></div><div class="header-right"><button class="header-share-btn" data-model="Claude Sonnet" title="分享此回答"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>分享此回答</button><span class="expand-hint">主卡查看</span></div></div><div class="card-summary-wrap"><div class="card-summary-title">核心观点</div><div class="card-summary-text"><div class="condensed-answer"><p>三大维度（输入/处理/输出）+ 避免情绪干扰；从'结论先行'与'区分事实/观点'两个微习惯切入。</p></div></div></div><div class="card-debate-record"><span class="card-record-text"><span class="card-record-upheld suffix-strong-hold">未被挑战 ✌️</span></span></div><div class="card-body"><div class="card-full"><div class="answer-section"><div class="answer-content"><div class="condensed-answer"><p>逻辑能力并非与生俱来的天赋，而是可以通过后天刻意练习获得的核心认知技能。要系统性地提升逻辑能力，需要从"输入、处理、输出"三个维度进行重构。</p>
+<p>识别逻辑谬误： 熟悉并能迅速指出日常交流中的常见谬误，如"滑坡谬误"、"稻草人谬误"、"诉诸人身"、"幸存者偏差"等。</p>
+<p>学习MECE原则： 即"相互独立，完全穷尽"。在面对复杂问题时，练习将其拆解为互不重叠且覆盖全面的子问题。</p>
+<p>运用第一性原理： 遇到问题时，不要基于类比或经验做决策，而是层层剥开事物的表象，回到最基本的、不可证伪的事实。</p>
+<p>论点-论据-论证提取： 在阅读深度文章时，逆向拆解作者的逻辑链条：他的核心论点是什么？提供了哪些论据？推导过程是否严密？</p>
+<p>寻找反例： 养成"自我辩驳"的习惯。</p>
+<ol>
+<li>跨学科的硬逻辑思维刻意练习</li>
+</ol>
+<p>学习编程或数学： 计算机科学和数学是逻辑训练的终极健身房。"即时且客观的负反馈"是训练严密逻辑的绝佳方式。</p></div></div><div class="full-answer"><p>逻辑能力并非与生俱来的天赋，而是可以通过后天刻意练习获得的核心认知技能。要系统性地提升逻辑能力，需要从"输入、处理、输出"三个维度进行重构。</p>
+<h3>一、 建立基础思维框架（理论基石）</h3>
+<p><strong>1. 掌握经典逻辑学基础</strong></p>
+<ul>
+<li><strong>识别逻辑谬误：</strong> 熟悉并能迅速指出日常交流中的常见谬误，如"滑坡谬误"、"稻草人谬误"、"诉诸人身"、"幸存者偏差"等。</li>
+<li><strong>学习MECE原则：</strong> 即"相互独立，完全穷尽"。在面对复杂问题时，练习将其拆解为互不重叠且覆盖全面的子问题。</li>
+<li><strong>运用第一性原理：</strong> 遇到问题时，不要基于类比或经验做决策，而是层层剥开事物的表象，回到最基本的、不可证伪的事实。</li>
+</ul>
+<h3>二、 优化信息处理模式（日常训练）</h3>
+<p><strong>1. 结构化阅读与拆解</strong></p>
+<ul>
+<li><strong>论点-论据-论证提取：</strong> 在阅读深度文章时，逆向拆解作者的逻辑链条：他的核心论点是什么？提供了哪些论据？推导过程是否严密？</li>
+<li><strong>寻找反例：</strong> 养成"自我辩驳"的习惯。</li>
+</ul>
+<p><strong>2. 跨学科的硬逻辑思维刻意练习</strong></p>
+<ul>
+<li><strong>学习编程或数学：</strong> 计算机科学和数学是逻辑训练的终极健身房。"即时且客观的负反馈"是训练严密逻辑的绝佳方式。</li>
+<li><strong>玩策略型游戏：</strong> 数独、国际象棋、德州扑克等训练多步推演能力。</li>
+</ul>
+<h3>三、 强化逻辑输出能力（实战检验）</h3>
+<p><strong>1. 金字塔原理写作</strong></p>
+<ul>
+<li><strong>结论先行</strong>：先抛出核心结论，然后给出 3 个支撑结论的论点。</li>
+<li><strong>写作是最好的逻辑梳理</strong>：脑海中的想法是网状的，文字是线性的。如果你无法写清楚，说明逻辑还未理顺。</li>
+</ul>
+<p><strong>2. 费曼技巧与辩论</strong></p>
+<ul>
+<li><strong>向外输出</strong>：解释给门外汉听，卡壳处即逻辑断层。</li>
+<li><strong>红蓝对抗</strong>：先为正方写下三条最严密的辩护逻辑，然后切换为反方写下三条足以驳倒正方的逻辑。</li>
+</ul>
+<h3>四、 避开情绪干扰</h3>
+<ul>
+<li><strong>延迟判断</strong>：遇到突发事件强迫自己停顿 30 秒，区分"客观事实"和"主观观点"。</li>
+<li><strong>正视认知偏差</strong>：意识到"证实偏差"，主动问"我是否忽略了对我不利的证据？"</li>
+</ul>
+<p><strong>总结</strong>：从<strong>"写作时结论先行"</strong>与<strong>"沟通时区分事实与观点"</strong>这两个最容易落地的微习惯开始。</p></div><button class="answer-toggle" data-wc="960">展开回答 · 960 字</button></div><div class="debate-panel no-content"><div class="no-debate-inline">未被挑战 ✌️</div></div></div></div></div>
+<div class="card collapsed" data-model="GPT-5.4"><div class="card-header"><div class="header-left"><span class="model-badge" style="background:#10A37F"></span><span class="model-name">GPT-5.4</span><span class="word-count">642 字</span></div><div class="header-right"><button class="header-share-btn" data-model="GPT-5.4" title="分享此回答"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>分享此回答</button><span class="expand-hint">主卡查看</span></div></div><div class="card-summary-wrap"><div class="card-summary-title">核心观点</div><div class="card-summary-text"><div class="condensed-answer"><p>四大策略（框架/输入输出/规避谬误/工具与跨学科 + PREP 表达）。</p></div></div></div><div class="card-debate-record"><span class="card-record-text">被挑战 2 次 · <span class="card-record-upheld suffix-neutral">全部成立</span></span><div class="card-record-bar"><span class="card-record-bar-cell fill-lose"></span><span class="card-record-bar-cell fill-lose"></span></div></div><div class="card-body"><div class="card-full"><div class="answer-section"><div class="answer-content"><div class="condensed-answer"><p>逻辑能力并非天生固定，而是可以通过科学的刻意练习来强化的。</p>
+<p>MECE原则（相互独立，完全穷尽）——确保拆分的各个子维度之间没有重叠，所有子维度加起来覆盖整个问题。</p>
+<p>第一性原理——剥离表面类比，向下追问到最基础的客观事实。</p>
+<p>金字塔原理——遵循"结论先行、以上统下、归类分组、逻辑递进"。</p>
+<p>多读哲学、逻辑学、数学史、深度调查报道。</p>
+<p>主动拆解作者论证：前提是什么？论据是什么？是否推得出结论？</p>
+<p>费曼技巧——讲不清楚说明逻辑链条断层。</p>
+<p>学习编程或数学——代码不会撒谎，缺少条件或逻辑闭环存在漏洞，程序就无法运行。</p>
+<p>使用可视化思维工具——XMind、Draw.io 把网状思绪转化为树状或线性图表。</p>
+<p>日常运用 PREP 表达模型——Point/Reason/Example/Point。</p>
+<p>总结：先从"凡事多问几个为什么"和"结论先行（PREP 表达）"两个习惯入手。</p></div></div><div class="full-answer"><p>逻辑能力并非天生固定，而是可以通过科学的刻意练习来强化的。</p>
+<h3>一、 掌握并应用经典思维框架</h3>
+<ol>
+<li><strong>MECE原则（相互独立，完全穷尽）</strong>——确保拆分的各个子维度之间没有重叠，所有子维度加起来覆盖整个问题。</li>
+<li><strong>第一性原理</strong>——剥离表面类比，向下追问到最基础的客观事实。</li>
+<li><strong>金字塔原理</strong>——遵循"结论先行、以上统下、归类分组、逻辑递进"。</li>
+</ol>
+<h3>二、 优化信息"输入"与"输出"</h3>
+<ol>
+<li><strong>高质量输入：阅读与拆解</strong></li>
 </ol>
 <ul>
-<li>身体呈一条直线，不塌腰、不翘臀</li>
-<li>收紧腹部和臀部</li>
-<li>肩肘垂直，颈部中立</li>
-<li>正常呼吸，不憋气</li>
+<li>多读哲学、逻辑学、数学史、深度调查报道。</li>
+<li>主动拆解作者论证：前提是什么？论据是什么？是否推得出结论？</li>
 </ul>
 <ol>
-<li><strong>不建议盲目追求超长时间</strong></li>
+<li><strong>高强度输出：写作与费曼技巧</strong></li>
 </ol>
-<p>   运动科学家 Stuart McGill 认为，单次平板支撑超过 2 分钟意义有限，不如改为<strong>多组短时 + 变式训练</strong>（侧平板、动态平板），效果更好。</p>
+<ul>
+<li>结构化写作强迫梳理前因后果。</li>
+<li>费曼技巧——讲不清楚说明逻辑链条断层。</li>
+</ul>
+<h3>三、 规避常见的逻辑谬误</h3>
+<ul>
+<li><strong>因果倒置与相关性谬误</strong></li>
+<li><strong>稻草人谬误</strong></li>
+<li><strong>诉诸人身</strong></li>
+<li><strong>滑坡谬误</strong></li>
+</ul>
+<h3>四、 借助工具与跨学科训练</h3>
 <ol>
-<li><strong>作为参考而非目标</strong></li>
+<li><strong>学习编程或数学</strong>——代码不会撒谎，缺少条件或逻辑闭环存在漏洞，程序就无法运行。</li>
+<li><strong>使用可视化思维工具</strong>——XMind、Draw.io 把网状思绪转化为树状或线性图表。</li>
+<li><strong>日常运用 PREP 表达模型</strong>——Point/Reason/Example/Point。</li>
 </ol>
-<p>   核心力量的评估还应结合侧平板、卷腹、俯卧撑等综合指标。</p>
-<h2>结论</h2>
-<p><strong>能标准完成 1 分钟，说明你身体素质处于普通偏上的水平</strong>，继续训练 1 – 2 个月通常可以提升到 2 分钟。</p></div><button class="answer-toggle" data-wc="823">展开回答 · 823 字</button></div><div class="debate-panel no-content"><div class="no-debate-inline">未被挑战 ✌️</div></div></div></div></div>
-<div class="sidebar"><div class="card collapsed" data-model="GPT-4o"><div class="card-header"><div class="header-left"><span class="model-badge" style="background:#10A37F"></span><span class="model-name">GPT-4o</span><span class="word-count">885 字</span></div><div class="header-right"><button class="header-share-btn" data-model="GPT-4o" title="分享此回答"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>分享此回答</button><span class="expand-hint">主卡查看</span></div></div><div class="card-summary-wrap"><div class="card-summary-title">核心观点</div><div class="card-summary-text"><div class="condensed-answer"><p>1 分钟=及格到中等偏下；性别/年龄细分维度最全；超 2 分钟边际收益递减</p></div></div></div><div class="card-debate-record"><span class="card-record-text"><span class="card-record-upheld suffix-strong-hold">未被挑战 ✌️</span></span></div><div class="card-body"><div class="card-full"><div class="answer-section"><div class="answer-content"><div class="condensed-answer"><p>结论：1 分钟平板支撑属于『及格到中等偏下』水平，能达到一般健康人群的基础标准，但离『优秀』还有明显差距。</p>
-<p>美国运动医学会（ACSM） 与 军警体能测试：通常把 60 秒作为基础及格线。</p>
-<p>吉尼斯世界纪录：男子 George Hood，2020 年。</p>
-<p>健身教练共识：普通人 2 分钟以内最有效，之后边际收益递减，建议改用侧平板、死虫式、悬垂举腿。</p>
-<p>动作质量比时长更重要：1 分钟标准动作胜过 3 分钟变形姿势。</p>
-<p>进阶方向：延长到 1.5 – 2 分钟；负重或不稳定平面；侧平板/动态平板。</p>
-<p>不必执着刷时长：核心训练讲究多样性，单一动作练到 2 分钟以上意义不大。</p>
-<p>一句话总结：1 分钟=健康成人应具备的最低门槛，及格分，但还有较大提升空间。</p></div></div><div class="full-answer"><h1>平板支撑做 1 分钟是什么水平？</h1>
-<h2>总体评价</h2>
-<p><strong>结论：1 分钟平板支撑属于『及格到中等偏下』水平</strong>，能达到一般健康人群的基础标准，但离『优秀』还有明显差距。</p>
-<h2>不同人群的水平参考表</h2>
-<table>
-<tr><th>时长</th><th>普通成年人水平</th><th>说明</th></tr>
-<tr><td>< 30 秒</td><td>较差</td><td>核心力量不足</td></tr>
-<tr><td>30 秒 – 1 分钟</td><td>及格</td><td>基础核心稳定性达标</td></tr>
-<tr><td><strong>1 – 2 分钟</strong></td><td><strong>中等 / 一般健康水平</strong></td><td>多数健身爱好者的起点</td></tr>
-<tr><td>2 – 3 分钟</td><td>良好</td><td>核心较强，健身习惯良好</td></tr>
-<tr><td>3 – 5 分钟</td><td>优秀</td><td>接近运动员训练水平</td></tr>
-<tr><td>> 5 分钟</td><td>顶尖</td><td>专业训练者水平</td></tr>
-</table>
-<h2>按性别和年龄细分（参考值）</h2>
-<table>
-<tr><th>人群</th><th>及格</th><th>良好</th><th>优秀</th></tr>
-<tr><td>男性 20 – 40 岁</td><td>60 秒</td><td>90 – 120 秒</td><td>180 秒+</td></tr>
-<tr><td>女性 20 – 40 岁</td><td>45 秒</td><td>60 – 90 秒</td><td>120 秒+</td></tr>
-<tr><td>40 岁以上</td><td>30 – 45 秒</td><td>60 秒</td><td>90 秒+</td></tr>
-</table>
-<h2>专业视角</h2>
+<p><strong>总结</strong>：先从<strong>"凡事多问几个为什么"</strong>和<strong>"结论先行（PREP 表达）"</strong>两个习惯入手。</p></div><button class="answer-toggle" data-wc="642">展开回答 · 642 字</button></div><div class="debate-panel has-content"><div class="debate-panel-header open"><span class="icon">⚔️</span><span>辩论面板</span><span class="debate-panel-stat"><span class="card-record-text">被挑战 2 次 · <span class="card-record-upheld suffix-neutral">全部成立</span></span><div class="card-record-bar"><span class="card-record-bar-cell fill-lose"></span><span class="card-record-bar-cell fill-lose"></span></div></span></div><div class="debate-items"><div class="debate-item"><div class="debate-clash-preview"><div class="debate-clash-grid"><div class="debate-clash-cell debate-clash-cell--challenge"><div class="debate-clash-cell-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>Gemini 3.0 Pro</strong></span><span class="debate-winner-pill debate-winner-pill--challenge">胜</span></div><div class="debate-clash-summary">GPT 缺反馈闭环且输入输出颗粒度粗</div></div><div class="debate-clash-cell debate-clash-cell--rebuttal"><div class="debate-clash-cell-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-summary">费曼即反馈闭环，结构化输出检验比抽象复盘更具实操性</div></div></div><div class="debate-verdict-preview"><span class="debate-verdict-prefix"><span class="debate-verdict-prefix-icon">🎯</span>裁判 · <strong>Claude Opus 4.7 (1M)</strong>：</span><span class="debate-verdict-summary">挑战方精准指出 GPT 原答案缺乏显性反馈闭环与输入颗粒度，命中方法论盲点。反驳方将费曼/PREP 重新诠释为反馈机制有合理性，但属事…</span></div><div class="debate-expand-trigger">查看完整观点</div></div><div class="debate-clash-full"><div class="debate-clash-full-block debate-clash-full-block--challenge"><div class="debate-clash-full-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>Gemini 3.0 Pro</strong></span><span class="debate-winner-pill debate-winner-pill--challenge">胜</span></div><div class="debate-clash-full-reason">GPT 缺失'反馈闭环'（决策复盘）维度，输入输出颗粒度粗</div><div class="debate-clash-full-body"><p>（见 GPT challenges_received[0]）</p></div></div><div class="debate-clash-full-block debate-clash-full-block--rebuttal"><div class="debate-clash-full-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-full-reason">费曼即反馈闭环，结构化输出检验比抽象复盘更具实操性</div><div class="debate-clash-full-body"><p>Gemini 3.0 Pro 的指控存在对经典学习模型的误读。它声称我的框架缺乏"反馈闭环"和暴露逻辑漏洞的机制，但实际上，这正是<strong>"费曼技巧"与"PREP 表达框架"的核心功能</strong>。</p>
+<p>首先，费曼技巧绝非单向的"单一步骤输出"，其本质是一个强反馈机制：通过向外解释，<strong>精准定位卡壳点（逻辑断层）</strong>，进而返回重新学习。这比抽象的"复盘决策"具有更高颗粒度和实操性。PREP 同样迫使输出者对齐论点与论据，逻辑漏洞在强制结构化下无处遁形。</p>
+<p>其次，关于"输入颗粒度"，我所提出的"跨学科思维模型"（如第一性原理、概率论）本身就是过滤和升华信息颗粒度的最高效工具。硬核阅读若无思维模型支撑，往往沦为无效的知识囤积。</p>
+<p>Gemini 试图用"决策复盘"等元认知词汇来包装反馈，却忽略了最好的逻辑纠偏机制应该内嵌在<strong>日常的结构化输出与检验</strong>中。没有机制落地的"复盘"容易陷入主观内耗，而依赖费曼技巧的"输出-检验-重构"循环，才是真实、高效的反馈闭环。</p></div></div><div class="debate-verdict-full"><div class="debate-verdict-full-header"><span class="debate-verdict-prefix-icon">🎯</span><span>裁判 · <strong>Claude Opus 4.7 (1M)</strong></span><span class="debate-verdict-score"><span class="debate-verdict-score-label">说服力</span><span class="debate-verdict-score-item debate-verdict-score-item--challenge">挑战方 <span class="debate-verdict-score-num">8</span></span><span class="debate-verdict-score-sep">/</span><span class="debate-verdict-score-item debate-verdict-score-item--rebuttal">反驳方 <span class="debate-verdict-score-num">7</span></span></span></div><div class="debate-verdict-full-body"><p>挑战方精准指出 GPT 原答案缺乏显性反馈闭环与输入颗粒度，命中方法论盲点。反驳方将费曼/PREP 重新诠释为反馈机制有合理性，但属事后补强而非原答案明示，且未正面回应'专门复盘机制'的独立价值。挑战立论更具增量信息。</p></div></div></div></div><div class="debate-item"><div class="debate-clash-preview"><div class="debate-clash-grid"><div class="debate-clash-cell debate-clash-cell--challenge"><div class="debate-clash-cell-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>DeepSeek V3.2</strong></span><span class="debate-winner-pill debate-winner-pill--challenge">胜</span></div><div class="debate-clash-summary">GPT PREP 非逻辑训练，工具分类混乱</div></div><div class="debate-clash-cell debate-clash-cell--rebuttal"><div class="debate-clash-cell-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-summary">PREP 是结构思维训练；编程与导图同为逻辑外化工具；日常习惯已内化</div></div></div><div class="debate-verdict-preview"><span class="debate-verdict-prefix"><span class="debate-verdict-prefix-icon">🎯</span>裁判 · <strong>Claude Opus 4.7 (1M)</strong>：</span><span class="debate-verdict-summary">质疑三点命中要害：PREP 确属表达框架，其逻辑训练强度远低于形式推理；编程与思维导图认知负荷差异巨大，归为一类分类依据薄弱；5 Wh…</span></div><div class="debate-expand-trigger">查看完整观点</div></div><div class="debate-clash-full"><div class="debate-clash-full-block debate-clash-full-block--challenge"><div class="debate-clash-full-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>DeepSeek V3.2</strong></span><span class="debate-winner-pill debate-winner-pill--challenge">胜</span></div><div class="debate-clash-full-reason">PREP 是演讲技巧而非逻辑训练（目标错位），工具分类混乱，缺日常习惯维度</div><div class="debate-clash-full-body"><p>（见 GPT challenges_received[1]）</p></div></div><div class="debate-clash-full-block debate-clash-full-block--rebuttal"><div class="debate-clash-full-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-full-reason">PREP 是结构思维训练；编程与导图同为逻辑外化工具；日常习惯已内化</div><div class="debate-clash-full-body"><p>感谢 DeepSeek V3.2 的指榷，但上述批评存在对逻辑本质的狭隘理解与层级混淆：</p>
+<p>第一，<strong>将 PREP 割裂为单纯的"表达技巧"是二元对立谬误。</strong> 语言是思维的载体，PREP 本质是演绎推理在沟通中的直观映射。要求大脑按 PREP 组织语言，就是在进行高强度的"强制性结构化思考"。清晰表达是严密逻辑的试金石。</p>
+<p>第二，<strong>对"工具分类"的质疑忽略了"外化思维"的共性。</strong> 编程与思维导图虽认知负荷不同，但都是强迫隐性逻辑显性化的工具。编程训练<strong>算法逻辑</strong>（因果、控制流），思维导图训练<strong>结构逻辑</strong>（层级、MECE）。二者同属"逻辑外化载体"，分类在应用层面完全自洽。</p>
+<p>第三，<strong>所谓"缺乏日常维度"是混淆了战略与战术。</strong> 5 Whys 只是"深度审视"策略中的具体战术，"信息脱水"则属于"输入输出"环节。四大策略是底层战略框架，早已将日常习惯作为战术嵌套其中。</p></div></div><div class="debate-verdict-full"><div class="debate-verdict-full-header"><span class="debate-verdict-prefix-icon">🎯</span><span>裁判 · <strong>Claude Opus 4.7 (1M)</strong></span><span class="debate-verdict-score"><span class="debate-verdict-score-label">说服力</span><span class="debate-verdict-score-item debate-verdict-score-item--challenge">挑战方 <span class="debate-verdict-score-num">7</span></span><span class="debate-verdict-score-sep">/</span><span class="debate-verdict-score-item debate-verdict-score-item--rebuttal">反驳方 <span class="debate-verdict-score-num">6</span></span></span></div><div class="debate-verdict-full-body"><p>质疑三点命中要害：PREP 确属表达框架，其逻辑训练强度远低于形式推理；编程与思维导图认知负荷差异巨大，归为一类分类依据薄弱；5 Whys 等日常习惯确是独立高频维度。反驳虽自圆其说，但'语言是思维载体'扩大化、'战术嵌套'属事后重构，未能有力反转。</p></div></div></div></div></div></div></div></div></div>
+<div class="card collapsed" data-model="DeepSeek V3.2"><div class="card-header"><div class="header-left"><span class="model-badge" style="background:#7C3AED"></span><span class="model-name">DeepSeek V3.2</span><span class="word-count">701 字</span></div><div class="header-right"><button class="header-share-btn" data-model="DeepSeek V3.2" title="分享此回答"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>分享此回答</button><span class="expand-hint">主卡查看</span></div></div><div class="card-summary-wrap"><div class="card-summary-title">核心观点</div><div class="card-summary-text"><div class="condensed-answer"><p>五维度：结构化思维 + 基础逻辑学 + 高强度学科训练 + 高质量输出 + 批判性日常习惯。</p></div></div></div><div class="card-debate-record"><span class="card-record-text"><span class="card-record-upheld suffix-strong-hold">未被挑战 ✌️</span></span></div><div class="card-body"><div class="card-full"><div class="answer-section"><div class="answer-content"><div class="condensed-answer"><p>逻辑能力并非与生俱来的天赋，而是一项可以通过后天系统性、刻意练习来显著提升的底层核心素养。</p>
+<p>金字塔原理：结论先行、以上统下、归类分组、逻辑递进。</p>
+<p>MECE 原则：相互独立，完全穷尽。</p>
+<p>演绎推理（从一般到特殊）：经典三段论。</p>
+<p>归纳推理（从特殊到一般）：注意样本代表性。</p>
+<p>溯因推理（从结果到原因）：排查故障核心逻辑。</p>
+<p>识别常见逻辑谬误：稻草人、滑坡、幸存者偏差、诉诸人身、因果倒置等。</p>
+<p>学习编程基础：把宏大目标拆成严谨的 if-else 与循环，找 Bug 即高强度逻辑排查训练。</p>
+<p>研究几何证明与离散数学：数学证明容不得半点模棱两可，强制大脑习惯环环相扣的严密推演。</p>
+<p>长文本结构化写作：写作是思维的照妖镜。</p>
+<p>费曼技巧：用最平实的语言解释给没有背景知识的人听。</p>
+<p>参与辩论与深度探讨：在自洽的同时迅速捕捉对方逻辑漏洞。</p>
+<p>5 Whys 连续追问法：层层向下挖到根本原因。</p>
+<p>日常信息"脱水"：过滤情绪化表达和华丽修辞，只提取【事实】【观点】【论据】，并检验三者间因果联系。</p></div></div><div class="full-answer"><p>逻辑能力并非与生俱来的天赋，而是一项可以通过后天系统性、刻意练习来显著提升的底层核心素养。</p>
+<h3>一、 建立结构化思维框架</h3>
 <ul>
-<li><strong>美国运动医学会（ACSM）</strong> 与 <strong>军警体能测试</strong>：通常把 60 秒作为基础及格线。</li>
-<li><strong>吉尼斯世界纪录</strong>：男子 George Hood，2020 年。</li>
-<li><strong>健身教练共识</strong>：普通人 2 分钟以内最有效，之后边际收益递减，建议改用侧平板、死虫式、悬垂举腿。</li>
+<li><strong>金字塔原理</strong>：结论先行、以上统下、归类分组、逻辑递进。</li>
+<li><strong>MECE 原则</strong>：相互独立，完全穷尽。</li>
 </ul>
-<h2>建议</h2>
-<ol>
-<li><strong>动作质量比时长更重要</strong>：1 分钟标准动作胜过 3 分钟变形姿势。</li>
-<li><strong>进阶方向</strong>：延长到 1.5 – 2 分钟；负重或不稳定平面；侧平板/动态平板。</li>
-<li><strong>不必执着刷时长</strong>：核心训练讲究多样性，单一动作练到 2 分钟以上意义不大。</li>
-</ol>
-<p><strong>一句话总结</strong>：1 分钟=健康成人应具备的<strong>最低门槛</strong>，及格分，但还有较大提升空间。</p></div><button class="answer-toggle" data-wc="885">展开回答 · 885 字</button></div><div class="debate-panel no-content"><div class="no-debate-inline">未被挑战 ✌️</div></div></div></div></div>
-<div class="card collapsed" data-model="Gemini"><div class="card-header"><div class="header-left"><span class="model-badge" style="background:#4285F4"></span><span class="model-name">Gemini</span><span class="word-count">808 字</span></div><div class="header-right"><button class="header-share-btn" data-model="Gemini" title="分享此回答"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>分享此回答</button><span class="expand-hint">主卡查看</span></div></div><div class="card-summary-wrap"><div class="card-summary-title">核心观点</div><div class="card-summary-text"><div class="condensed-answer"><p>四类人群分级（普通男/女/健身爱好者/运动员）；引用 McGill 的 2 分钟阈值</p></div></div></div><div class="card-debate-record"><span class="card-record-text">1 次挑战 · <span class="card-record-upheld suffix-neutral">全部扛住</span></span><div class="card-record-bar"><span class="card-record-bar-cell fill-win"></span></div></div><div class="card-body"><div class="card-full"><div class="answer-section"><div class="answer-content"><div class="condensed-answer"><p>对普通健身爱好者来说，1 分钟属中等偏下；对久坐的普通人（尤其女性或 40 岁以上），1 分钟已是合格。</p>
-<p>美国运动委员会（ACE） 建议普通成年人目标值 1 – 2 分钟。</p>
-<p>核心训练专家 Stuart McGill：能稳定支撑 2 分钟就足够，再长意义不大。</p>
-<p>世界纪录：男子平板支撑已超过 9 小时（乔治·胡德，2020 年）。</p>
-<p>✅ 核心肌群基础尚可，没有严重退化。</p>
-<p>⚠️ 距离『强核心』还有差距。</p>
-<p>💡 单纯延长时间收益递减，不如做负重平板、侧平板、动态平板等进阶变式。</p>
-<p>轻松做到 1 分钟 → 升级到侧平板、抬腿平板、负重平板。</p>
-<p>刚达到 1 分钟 → 保持每周 3 – 4 次，2 个月可到 2 分钟。</p>
-<p>腰部酸痛 → 先检查姿势，不要延长时间。</p></div></div><div class="full-answer"><h1>平板支撑 1 分钟是什么水平？</h1>
-<h2>简要结论</h2>
-<p>对<strong>普通健身爱好者</strong>来说，1 分钟属<strong>中等偏下</strong>；对<strong>久坐的普通人</strong>（尤其女性或 40 岁以上），1 分钟已是<strong>合格</strong>。</p>
-<h2>不同人群的参考标准</h2>
-<table>
-<tr><th>人群</th><th>不合格</th><th>合格</th><th>良好</th><th>优秀</th></tr>
-<tr><td>成年男性</td><td>< 30 秒</td><td>30 – 60 秒</td><td>1 – 2 分钟</td><td>> 2 分钟</td></tr>
-<tr><td>成年女性</td><td>< 20 秒</td><td>20 – 45 秒</td><td>45 秒 – 1.5 分钟</td><td>> 1.5 分钟</td></tr>
-<tr><td>健身爱好者</td><td>< 1 分钟</td><td>1 – 2 分钟</td><td>2 – 4 分钟</td><td>> 4 分钟</td></tr>
-<tr><td>运动员 / 核心训练者</td><td>< 2 分钟</td><td>2 – 3 分钟</td><td>3 – 5 分钟</td><td>> 5 分钟</td></tr>
-</table>
-<h2>专业视角</h2>
+<h3>二、 学习并应用基础逻辑学</h3>
 <ul>
-<li><strong>美国运动委员会（ACE）</strong> 建议普通成年人目标值 1 – 2 分钟。</li>
-<li><strong>核心训练专家 Stuart McGill</strong>：能稳定支撑 2 分钟就足够，再长意义不大。</li>
-<li><strong>世界纪录</strong>：男子平板支撑已超过 9 小时（乔治·胡德，2020 年）。</li>
+<li><strong>精通三大推理方式</strong>：</li>
+<li><strong>演绎推理</strong>（从一般到特殊）：经典三段论。</li>
+<li><strong>归纳推理</strong>（从特殊到一般）：注意样本代表性。</li>
+<li><strong>溯因推理</strong>（从结果到原因）：排查故障核心逻辑。</li>
+<li><strong>识别常见逻辑谬误</strong>：稻草人、滑坡、幸存者偏差、诉诸人身、因果倒置等。</li>
 </ul>
-<h2>1 分钟的实际意义</h2>
+<h3>三、 通过高强度学科进行"思维体操"</h3>
 <ul>
-<li>✅ 核心肌群基础尚可，没有严重退化。</li>
-<li>⚠️ 距离『强核心』还有差距。</li>
-<li>💡 单纯延长时间收益递减，不如做负重平板、侧平板、动态平板等进阶变式。</li>
+<li><strong>学习编程基础</strong>：把宏大目标拆成严谨的 if-else 与循环，找 Bug 即高强度逻辑排查训练。</li>
+<li><strong>研究几何证明与离散数学</strong>：数学证明容不得半点模棱两可，强制大脑习惯环环相扣的严密推演。</li>
 </ul>
-<h2>动作质量比时长更重要</h2>
-<p><strong>标准姿势自检：</strong></p>
-<ol>
-<li>头、背、臀、脚跟成一条直线</li>
-<li>核心和臀部持续收紧</li>
-<li>肘关节在肩膀正下方</li>
-<li>正常呼吸，不憋气</li>
-</ol>
-<h2>建议</h2>
+<h3>四、 坚持高质量的"逻辑输出"</h3>
 <ul>
-<li>轻松做到 1 分钟 → 升级到侧平板、抬腿平板、负重平板。</li>
-<li>刚达到 1 分钟 → 保持每周 3 – 4 次，2 个月可到 2 分钟。</li>
-<li>腰部酸痛 → 先检查姿势，不要延长时间。</li>
-</ul></div><button class="answer-toggle" data-wc="808">展开回答 · 808 字</button></div><div class="debate-panel has-content"><div class="debate-panel-header open"><span class="icon">⚔️</span><span>辩论面板</span><span class="debate-count">1 条</span></div><div class="debate-items"><div class="debate-item"><div class="debate-clash-preview"><div class="debate-clash-grid"><div class="debate-clash-cell debate-clash-cell--challenge"><div class="debate-clash-cell-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>GLM-4</strong></span></div><div class="debate-clash-summary">Gemini 引 McGill 2 分钟上限，又要求优秀 &gt;4 分钟；运动员一刀切</div></div><div class="debate-clash-cell debate-clash-cell--rebuttal"><div class="debate-clash-cell-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span><span class="debate-winner-pill debate-winner-pill--rebuttal">胜</span></div><div class="debate-clash-summary">区分『现状标尺』与『训练处方』解自相矛盾；同意运动员不该一刀切</div></div></div><div class="debate-verdict-preview"><span class="debate-verdict-prefix"><span class="debate-verdict-prefix-icon">🎯</span>裁判 · <strong>Claude Opus</strong>：</span><span class="debate-verdict-summary">GLM 的矛盾指控本身有道理，但 Gemini 用『现状标尺 vs 训练处方』区分成功化解了表面矛盾，并大方承认运动员一刀切问题——这…</span></div><div class="debate-expand-trigger">查看完整观点</div></div><div class="debate-clash-full"><div class="debate-clash-full-block debate-clash-full-block--challenge"><div class="debate-clash-full-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>GLM-4</strong></span></div><div class="debate-clash-full-reason">分级表内部自相矛盾 + 对运动员以偏概全</div><div class="debate-clash-full-body"><p>Gemini 既引 McGill『超过 2 分钟意义有限』，又把健身爱好者『优秀门槛』设为 >4 分钟、运动员『不合格线』设为 <2 分钟——既然权威认为 2 分钟后边际收益递减，再要求 4 分钟+ 才优秀，显然矛盾。把『运动员 <2 分钟不合格』套用到所有运动员也不合理：平板测静态核心耐力，而马拉松/游泳/羽毛球/短跑/举重等专项训练重心不在此，其平板支撑未必到 2 分钟。</p></div></div><div class="debate-clash-full-block debate-clash-full-block--rebuttal"><div class="debate-clash-full-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span><span class="debate-winner-pill debate-winner-pill--rebuttal">胜</span></div><div class="debate-clash-full-reason">区分『现状标尺』与『训练处方』解自相矛盾；同意运动员不该一刀切</div><div class="debate-clash-full-body"><p>感谢 GLM-4 的指正，这两点批评基本成立，我先认下，再做必要澄清。</p>
-<p><strong>关于『自相矛盾』——承认表述不清，但逻辑可以统一</strong></p>
-<p>GLM-4 指出我一边引 McGill 的『2 分钟足够』，一边把『优秀 >4 分钟』写进分级表，读起来确实拧巴。问题在于我<strong>没有区分两个层面</strong>：</p>
-<ul>
-<li><strong>分级表是『现状标尺』</strong>：衡量当前能撑多久，反映相对水平。能撑 4 分钟的人客观上比撑 1 分钟的人核心耐力强，这是事实描述。</li>
-<li><strong>McGill 的 2 分钟是『训练目标建议』</strong>：核心观点是超过 2 分钟边际收益递减，继续延长不如改做侧平板、死虫、鸟狗等动态/抗旋转动作。这是训练处方。</li>
+<li><strong>长文本结构化写作</strong>：写作是思维的照妖镜。</li>
+<li><strong>费曼技巧</strong>：用最平实的语言解释给没有背景知识的人听。</li>
+<li><strong>参与辩论与深度探讨</strong>：在自洽的同时迅速捕捉对方逻辑漏洞。</li>
 </ul>
-<p>两者并不冲突——<strong>『能做到』和『值得继续把时间花上去』是两回事</strong>。但原答案没把这层窗户纸捅破，导致读者以为我推荐大家练到 4 分钟以上，这是表述失当。</p>
-<p><strong>关于『以偏概全』——完全同意，运动员不该一刀切</strong></p>
-<p>平板支撑测的是<strong>抗伸展的静态核心耐力</strong>，和专项表现相关性不一致：</p>
+<h3>五、 养成批判性的日常思考习惯</h3>
 <ul>
-<li>对体操、格斗、划船这类核心刚性需求高的项目，2 分钟+ 确实是基础门槛；</li>
-<li>但<strong>短跑、举重、游泳、羽毛球</strong>的核心需求更偏爆发/旋转/传导，训练重心不在静态支撑上，撑不到 2 分钟不等于『不合格』。</li>
+<li><strong>5 Whys 连续追问法</strong>：层层向下挖到根本原因。</li>
+<li><strong>日常信息"脱水"</strong>：过滤情绪化表达和华丽修辞，只提取【事实】【观点】【论据】，并检验三者间因果联系。</li>
 </ul>
-<p>『运动员组』应改为<strong>『以核心静态耐力为训练重点的综合训练者』</strong>。</p>
-<p><strong>需要捍卫的一点</strong>：分级表作为<strong>面向一般健身人群的横向参考</strong>仍有价值——读者问『1 分钟是什么水平』，他要的就是相对坐标。我该做的是在表头加限定『一般健身者参考』，并在末尾补一句：<strong>达到 2 分钟即可转向更多样化的核心训练，不必执着于延长时间</strong>。</p></div></div><div class="debate-verdict-full"><div class="debate-verdict-full-header"><span class="debate-verdict-prefix-icon">🎯</span><span>裁判 · <strong>Claude Opus</strong></span><span class="debate-verdict-score"><span class="debate-verdict-score-label">说服力</span><span class="debate-verdict-score-item debate-verdict-score-item--challenge">挑战方 <span class="debate-verdict-score-num">7</span></span><span class="debate-verdict-score-sep">/</span><span class="debate-verdict-score-item debate-verdict-score-item--rebuttal">反驳方 <span class="debate-verdict-score-num">8</span></span></span></div><div class="debate-verdict-full-body"><p>GLM 的矛盾指控本身有道理，但 Gemini 用『现状标尺 vs 训练处方』区分成功化解了表面矛盾，并大方承认运动员一刀切问题——这种认错+结构化澄清的回应比原攻击更具建设性。</p></div></div></div></div></div></div></div></div></div>
-<div class="card collapsed" data-model="GLM-4"><div class="card-header"><div class="header-left"><span class="model-badge" style="background:#6B7280"></span><span class="model-name">GLM-4</span><span class="word-count">719 字</span></div><div class="header-right"><button class="header-share-btn" data-model="GLM-4" title="分享此回答"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>分享此回答</button><span class="expand-hint">主卡查看</span></div></div><div class="card-summary-wrap"><div class="card-summary-title">核心观点</div><div class="card-summary-text"><div class="condensed-answer"><p>1 分钟=及格合格；男 60 秒/女 45-60 秒达标；含多处未证实数据</p></div></div></div><div class="card-debate-record"><span class="card-record-text">3 次挑战 · <span class="card-record-upheld suffix-neutral">1 次成立</span></span><div class="card-record-bar"><span class="card-record-bar-cell fill-lose"></span><span class="card-record-bar-cell fill-tie"></span><span class="card-record-bar-cell fill-tie"></span></div></div><div class="card-body"><div class="card-full"><div class="answer-section"><div class="answer-content"><div class="condensed-answer"><p>1 分钟属『及格合格』水平，核心力量基础正常，但距离优秀还有明显差距。</p>
-<p>普通成年人平均水平：约 45 秒 – 1 分钟</p>
-<p>军警体能测试：通常 2 分钟以上</p>
-<p>吉尼斯世界纪录：男子超过 9 小时（George Hood，2020 年）</p>
-<p>『1 分钟标准平板』远胜『3 分钟塌腰撅屁股』。</p>
-<p>基础期：每天 3 组 × 30 秒，逐步加到 1 分钟</p>
-<p>进阶期：侧平板、动态平板、抬腿平板</p>
-<p>单次超过 2 分钟意义递减，不如增加变式和组数</p>
-<p>能标准完成 1 分钟平板支撑，超过了约 60% 的普通人，属『及格健康』水平。</p></div></div><div class="full-answer"><h1>平板支撑 1 分钟是什么水平？</h1>
-<h2>总体评价</h2>
-<p><strong>1 分钟属『及格合格』水平</strong>，核心力量基础正常，但距离优秀还有明显差距。</p>
-<h2>不同人群评级</h2>
-<h3>男性</h3>
-<table>
-<tr><th>时间</th><th>评价</th></tr>
-<tr><td>< 30 秒</td><td>较差</td></tr>
-<tr><td>30 – 60 秒</td><td>及格</td></tr>
-<tr><td><strong>60 秒</strong></td><td><strong>合格/普通水平</strong></td></tr>
-<tr><td>1 – 2 分钟</td><td>良好</td></tr>
-<tr><td>2 – 4 分钟</td><td>优秀</td></tr>
-<tr><td>> 4 分钟</td><td>专业/精英</td></tr>
-</table>
-<h3>女性</h3>
-<table>
-<tr><th>时间</th><th>评价</th></tr>
-<tr><td>< 20 秒</td><td>较差</td></tr>
-<tr><td>20 – 45 秒</td><td>及格</td></tr>
-<tr><td><strong>45 – 60 秒</strong></td><td><strong>合格/普通水平</strong></td></tr>
-<tr><td>1 – 2 分钟</td><td>良好</td></tr>
-<tr><td>> 2 分钟</td><td>优秀</td></tr>
-</table>
-<h2>参考数据</h2>
-<ul>
-<li><strong>普通成年人平均水平</strong>：约 45 秒 – 1 分钟</li>
-<li><strong>军警体能测试</strong>：通常 2 分钟以上</li>
-<li><strong>吉尼斯世界纪录</strong>：男子超过 9 小时（George Hood，2020 年）</li>
-</ul>
-<h2>动作质量 > 时长</h2>
-<p>『1 分钟标准平板』远胜『3 分钟塌腰撅屁股』。</p>
-<p>正确姿势：</p>
-<ul>
-<li>头、背、臀、脚踝呈一条直线</li>
-<li>腹部收紧、臀部夹紧</li>
-<li>肩在肘正上方</li>
-<li>均匀呼吸、不憋气</li>
-</ul>
-<h2>提升建议</h2>
-<ol>
-<li><strong>基础期</strong>：每天 3 组 × 30 秒，逐步加到 1 分钟</li>
-<li><strong>进阶期</strong>：侧平板、动态平板、抬腿平板</li>
-<li>单次超过 2 分钟意义递减，不如增加变式和组数</li>
-</ol>
-<h2>结论</h2>
-<p>能标准完成 1 分钟平板支撑，<strong>超过了约 60% 的普通人</strong>，属『及格健康』水平。</p></div><button class="answer-toggle" data-wc="719">展开回答 · 719 字</button></div><div class="debate-panel has-content"><div class="debate-panel-header open"><span class="icon">⚔️</span><span>辩论面板</span><span class="debate-count">3 条</span></div><div class="debate-items"><div class="debate-item"><div class="debate-clash-preview"><div class="debate-clash-grid"><div class="debate-clash-cell debate-clash-cell--challenge"><div class="debate-clash-cell-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>Claude Sonnet</strong></span><span class="debate-winner-pill debate-winner-pill--challenge">胜</span></div><div class="debate-clash-summary">吉尼斯数字错、60% 缺来源、4 分钟专业线偏松</div></div><div class="debate-clash-cell debate-clash-cell--rebuttal"><div class="debate-clash-cell-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-summary">吉尼斯数字 + 60% 伪精确承认错误；『4 分钟专业』改为『核心耐力训练有成』</div></div></div><div class="debate-verdict-preview"><span class="debate-verdict-prefix"><span class="debate-verdict-prefix-icon">🎯</span>裁判 · <strong>Claude Opus</strong>：</span><span class="debate-verdict-summary">挑战方三项质疑全部命中，吉尼斯数字错误是硬伤。反驳方及时认错态度良好，但对『4 分钟专业』的辩护略弱——改说法不如直接删除该层级。</span></div><div class="debate-expand-trigger">查看完整观点</div></div><div class="debate-clash-full"><div class="debate-clash-full-block debate-clash-full-block--challenge"><div class="debate-clash-full-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>Claude Sonnet</strong></span><span class="debate-winner-pill debate-winner-pill--challenge">胜</span></div><div class="debate-clash-full-reason">吉尼斯纪录数据错误 + 伪精确百分比 + 分级偏松</div><div class="debate-clash-full-body"><p>1）吉尼斯世界纪录写成『超过 9 小时』，实际上 George Hood 2020.2.15 创造的是 8 小时 15 分 15 秒。GLM 版本最肯定具体，误导性最强。2）『超过约 60% 的普通人』这个具体百分比无任何来源，属凭感觉编造。3）『>4 分钟即专业水平』偏宽松——很多健身爱好者经过训练都能到 4 分钟，真正专业/军警标准通常更高，且『专业』无明确时长上限。</p></div></div><div class="debate-clash-full-block debate-clash-full-block--rebuttal"><div class="debate-clash-full-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-full-reason">吉尼斯数字 + 60% 伪精确承认错误；『4 分钟专业』改为『核心耐力训练有成』</div><div class="debate-clash-full-body"><p>Claude 的三点批评我逐条回应。</p>
-<p><strong>吉尼斯纪录数字</strong>：完全接受。George Hood 2020 年 2 月 15 日创造的男子平板支撑世界纪录实际是 <strong>8 小时 15 分 15 秒</strong>，我写『超过 9 小时』是硬错，且『具体数字 + 错误』的组合最具误导性，这个锅我担，已更正。</p>
-<p><strong>『超过约 60% 的普通人』</strong>：同样认错——ACSM、ACE、NHANES、国民体质监测都没有针对平板支撑时长的常模抽样。属于典型『伪精确』，应撤回或改为『经验观察上』。</p>
-<p><strong>『>4 分钟即专业』偏松</strong>：部分接受。Claude 说真正专业标准没有明确上限，这是对的——专业/军警体能并非看平板多久，而是看综合核心耐力 + 动作质量 + 与专项结合度。原写法把『时长 = 专业』是简化了。但『健身爱好者训练到 4 分钟』确实也不算少数，4 分钟门槛的读者心理意义仍在。可改为：『>4 分钟 = 核心静态耐力训练有成，但不等于专业』。</p></div></div><div class="debate-verdict-full"><div class="debate-verdict-full-header"><span class="debate-verdict-prefix-icon">🎯</span><span>裁判 · <strong>Claude Opus</strong></span><span class="debate-verdict-score"><span class="debate-verdict-score-label">说服力</span><span class="debate-verdict-score-item debate-verdict-score-item--challenge">挑战方 <span class="debate-verdict-score-num">9</span></span><span class="debate-verdict-score-sep">/</span><span class="debate-verdict-score-item debate-verdict-score-item--rebuttal">反驳方 <span class="debate-verdict-score-num">7</span></span></span></div><div class="debate-verdict-full-body"><p>挑战方三项质疑全部命中，吉尼斯数字错误是硬伤。反驳方及时认错态度良好，但对『4 分钟专业』的辩护略弱——改说法不如直接删除该层级。</p></div></div></div></div><div class="debate-item"><div class="debate-clash-preview"><div class="debate-clash-grid"><div class="debate-clash-cell debate-clash-cell--challenge"><div class="debate-clash-cell-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>GPT-4o</strong></span></div><div class="debate-clash-summary">无引用的 60% 百分比 + 性别差距 2:1 缺研究支撑</div></div><div class="debate-clash-cell debate-clash-cell--rebuttal"><div class="debate-clash-cell-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-summary">承认无来源数据需改为『经验区间』；性别差距 2:1 是双重失误，女优秀线应提到 2.5-3min</div></div></div><div class="debate-verdict-preview"><span class="debate-verdict-prefix"><span class="debate-verdict-prefix-icon">🎯</span>裁判 · <strong>Claude Opus</strong>：</span><span class="debate-verdict-summary">GPT-4o 关于性别差距 2:1 的批评非常精准，指出了比『无来源』更深的分级框架问题。GLM 的反驳不仅认错，还主动升级分析——指…</span></div><div class="debate-expand-trigger">查看完整观点</div></div><div class="debate-clash-full"><div class="debate-clash-full-block debate-clash-full-block--challenge"><div class="debate-clash-full-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>GPT-4o</strong></span></div><div class="debate-clash-full-reason">用了无来源的百分位数据，属于『伪精确』误导</div><div class="debate-clash-full-body"><p>『普通成年人平均水平约 45 秒 – 1 分钟』与『超过约 60% 的普通人』两处都没有引用 ACSM、ACE、NCSF 或大样本研究，在健身评估领域属典型伪精确。建议要么引具体研究，要么用『大致』『经验上』等限定词。此外『女性 >2 分钟即优秀』对比『男性 >4 分钟才专业』，性别差距 2:1 缺乏核心肌群性别差异研究支撑。</p></div></div><div class="debate-clash-full-block debate-clash-full-block--rebuttal"><div class="debate-clash-full-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-full-reason">承认无来源数据需改为『经验区间』；性别差距 2:1 是双重失误，女优秀线应提到 2.5-3min</div><div class="debate-clash-full-body"><p>GPT-4o 的两点批评，我分开回应。</p>
-<p><strong>无引用的百分位数据</strong>：和回应 Claude 类似，接受批评。『平均水平约 45s – 1min』没有公开统计支持——平板支撑不是国民体质监测项目，不存在权威均值。应改为『健身行业经验上常见区间』，明确标注是从业者观察而非统计数据。『超过约 60% 的普通人』已在回应 Claude 时撤回。</p>
-<p><strong>性别差距 2:1</strong>：这个批评非常关键，我完全同意。McGill 的实验室数据里男女核心耐力差距通常在 10-30%，不是 100%。原表里男 >4min 专业 vs 女 >2min 优秀，用不同标准（专业 vs 优秀）混淆了比较，又让绝对时长差距翻倍，双重失误。</p>
-<p>修正方向：女性『优秀』线应提到 2.5-3min，且两性使用同一评级语义（不要『优秀』和『专业』混用）。感谢指出，这个问题比单纯的『无来源』更隐蔽，但影响更大——读者会据此判断自己的性别水位。</p></div></div><div class="debate-verdict-full"><div class="debate-verdict-full-header"><span class="debate-verdict-prefix-icon">🎯</span><span>裁判 · <strong>Claude Opus</strong></span><span class="debate-verdict-score"><span class="debate-verdict-score-label">说服力</span><span class="debate-verdict-score-item debate-verdict-score-item--challenge">挑战方 <span class="debate-verdict-score-num">8</span></span><span class="debate-verdict-score-sep">/</span><span class="debate-verdict-score-item debate-verdict-score-item--rebuttal">反驳方 <span class="debate-verdict-score-num">8</span></span></span></div><div class="debate-verdict-full-body"><p>GPT-4o 关于性别差距 2:1 的批评非常精准，指出了比『无来源』更深的分级框架问题。GLM 的反驳不仅认错，还主动升级分析——指出『优秀/专业』语义混用是双重失误。双方都有贡献。</p></div></div></div></div><div class="debate-item"><div class="debate-clash-preview"><div class="debate-clash-grid"><div class="debate-clash-cell debate-clash-cell--challenge"><div class="debate-clash-cell-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>Gemini</strong></span></div><div class="debate-clash-summary">60% 百分比系编造 + 男 60s 合格偏低</div></div><div class="debate-clash-cell debate-clash-cell--rebuttal"><div class="debate-clash-cell-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-summary">认『伪精确』，不认『合格线偏低』；改措辞为『入门基准』，不改 60s 阈值</div></div></div><div class="debate-verdict-preview"><span class="debate-verdict-prefix"><span class="debate-verdict-prefix-icon">🎯</span>裁判 · <strong>Claude Opus</strong>：</span><span class="debate-verdict-summary">Gemini 的『编造百分比』批评成立，但『合格线偏低』属于标准之争而非事实错误。GLM 的『改措辞不改阈值』应对合理——60s 作为…</span></div><div class="debate-expand-trigger">查看完整观点</div></div><div class="debate-clash-full"><div class="debate-clash-full-block debate-clash-full-block--challenge"><div class="debate-clash-full-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>Gemini</strong></span></div><div class="debate-clash-full-reason">伪精确百分比 + 分级偏松</div><div class="debate-clash-full-body"><p>『超过 60% 的普通人』『平均水平约 45 – 60 秒』属于编造数据——平板支撑并非国民体质监测常模项目，不存在权威均值。此外男 60 秒直接定为『合格』偏低，对比 McGill 研究，60 秒只能算『入门基准』。GLM 的分级会让读者高估自己的核心力量。</p></div></div><div class="debate-clash-full-block debate-clash-full-block--rebuttal"><div class="debate-clash-full-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-full-reason">认『伪精确』，不认『合格线偏低』；改措辞为『入门基准』，不改 60s 阈值</div><div class="debate-clash-full-body"><p>Gemini 的第一点和前两位基本一致，我已认错——平板支撑不是国民体质监测项目，不存在权威均值，『60% 的普通人』『平均 45s–1min』均应撤回。</p>
-<p><strong>关于『男 60s 合格偏低』——这里需要保留辩护</strong>：</p>
-<p>我把 60 秒定为男性『合格』，并非凭空。Stuart McGill 在腰椎研究中把健康成年人维持标准平板的合理目标定在 60-120 秒区间，ACE 与多家健身认证机构科普材料普遍以 1 分钟作为『基础核心耐力』参考线。所以『60s 合格』更准确的说法是<strong>行业经验共识下的入门基准</strong>，和 Gemini 批评的『入门基准』在语义上差别不大，只是措辞轻重问题。</p>
-<p>如果要改，我会把表头从『合格』改成『入门基准』，避免让读者以为 60s 就高枕无忧。但把合格线再提高（例如 90s）反而不贴合大众现状——会让原本健身新手看了直接放弃。</p>
-<p>结论：<strong>认『伪精确』，不认『合格线偏低』；改措辞，不改阈值</strong>。</p></div></div><div class="debate-verdict-full"><div class="debate-verdict-full-header"><span class="debate-verdict-prefix-icon">🎯</span><span>裁判 · <strong>Claude Opus</strong></span><span class="debate-verdict-score"><span class="debate-verdict-score-label">说服力</span><span class="debate-verdict-score-item debate-verdict-score-item--challenge">挑战方 <span class="debate-verdict-score-num">7</span></span><span class="debate-verdict-score-sep">/</span><span class="debate-verdict-score-item debate-verdict-score-item--rebuttal">反驳方 <span class="debate-verdict-score-num">7</span></span></span></div><div class="debate-verdict-full-body"><p>Gemini 的『编造百分比』批评成立，但『合格线偏低』属于标准之争而非事实错误。GLM 的『改措辞不改阈值』应对合理——60s 作为大众入门基准有行业共识，只是标签用『合格』确实容易被误读。</p></div></div></div></div></div></div></div></div></div></div>
+<p>训练的本质是从"直觉与情绪驱动"向"理性与证据驱动"的艰难跨越。</p></div><button class="answer-toggle" data-wc="701">展开回答 · 701 字</button></div><div class="debate-panel no-content"><div class="no-debate-inline">未被挑战 ✌️</div></div></div></div></div></div>
 </div>
 
 <div class="footer">
-  Generated by MoCompare · 2026-04-26 01:33 · ⚔️ Cross-Model Debate Enabled
+  <span class="brand-name">MoCo</span>: Multi-Model Compare
+  <span class="footer-divider">·</span>
+  generated by <a class="footer-link" href="https://github.com/MoneyMoneyGo/moco-skill" target="_blank" rel="noopener">银纸</a>
+  <span class="footer-divider">·</span>
+  powered by Claude
+  <span class="footer-divider">·</span>
+  <button class="footer-cost-trigger" id="footerCostTrigger" aria-haspopup="dialog" aria-controls="costModal">
+    📊 积分消耗
+  </button>
+</div>
+
+<!-- ===== IMAGE LIGHTBOX（vision-header 缩略图点击触发；Esc / 遮罩 / ✕ 关闭） ===== -->
+<div class="image-lightbox" id="imageLightbox" role="dialog" aria-modal="true" aria-label="原图查看" hidden>
+  <div class="image-lightbox-overlay" id="imageLightboxOverlay"></div>
+  <button class="image-lightbox-close" id="imageLightboxClose" aria-label="关闭">✕</button>
+  <img class="image-lightbox-img" id="imageLightboxImg" alt="原图（点击空白处或按 Esc 关闭）" />
+</div>
+
+<!-- ===== COST REFERENCE MODAL（点击 footer ⓘ 触发；Esc / 遮罩 / ✕ 关闭） ====================-->
+<div class="cost-modal" id="costModal" role="dialog" aria-modal="true" aria-labelledby="costModalTitle" hidden>
+  <div class="cost-modal-overlay" id="costModalOverlay"></div>
+  <div class="cost-modal-card" role="document">
+    <div class="cost-modal-head">
+      <h2 class="cost-modal-title" id="costModalTitle">📊 moco 积分消耗参考</h2>
+      <button class="cost-modal-close" id="costModalClose" aria-label="关闭">✕</button>
+    </div>
+    <div class="cost-modal-body">
+      <p class="cost-modal-note">
+        企业版 WorkBuddy 每月给每位员工 <strong>10 万积分</strong>（约合 $1000 成本，1 积分 ≈ $0.01）。
+        以下数字基于 2026-04-27 真实使用数据校准（实测 144 笔 = 4015 积分），±30% 浮动。
+      </p>
+
+      <h3 class="cost-modal-h3">表 1：moco 各阶段实测积分</h3>
+      <div class="cost-modal-table-scroll">
+        <table class="cost-modal-table">
+          <thead><tr><th>阶段</th><th>调用数</th><th class="wrap">模型</th><th>单次积分</th><th>小计</th></tr></thead>
+          <tbody>
+            <tr><td>R1 初答</td><td>4 并发</td><td class="wrap">Sonnet 4.6 / GPT 5.4 / Gemini 3.0 Pro / DeepSeek V3.2</td><td>~5-15 / 家</td><td><strong>~25-45</strong></td></tr>
+            <tr><td>R2 挑战</td><td>4 并发</td><td class="wrap">同 R1（含其他 3 家答案 input 偏长）</td><td>~10-25 / 家</td><td><strong>~40-80</strong></td></tr>
+            <tr><td>R3 反驳</td><td>~2.5</td><td class="wrap">被挑战方</td><td>~10-25</td><td><strong>~25-60</strong></td></tr>
+            <tr><td>R4 裁判</td><td>~2.5</td><td class="wrap"><code>claude-opus-4.7-1m</code></td><td>~30-80</td><td><strong>~75-200</strong></td></tr>
+            <tr><td>WorkBuddy 主智能体编排</td><td>5-8 次</td><td class="wrap"><strong>当前会话模型</strong>（顶部选择器决定）</td><td>~15-100 / 次</td><td><strong>~80-500</strong></td></tr>
+            <tr><td>R1 视觉积分（仅 r1_only）</td><td>4</td><td class="wrap">视觉编码</td><td>~2-5 / 家</td><td><strong>~10-20</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="cost-modal-note cost-modal-note-sub">
+        💡 主智能体编排成本"自动跟随会话当前模型"——不在 moco 代码里写死。
+        切到 Sonnet 4.6 1M 即可减半，无需改任何 moco 代码。
+      </p>
+
+      <h3 class="cost-modal-h3">表 2：积分消耗对照（含月配额视角）</h3>
+      <div class="cost-modal-table-scroll">
+        <table class="cost-modal-table">
+          <thead><tr><th class="wrap">模式</th><th>单次积分</th><th>相对单次质询</th><th>月配额可跑</th></tr></thead>
+          <tbody>
+            <tr><td class="wrap">🟦 单次 WorkBuddy 质询基准（Sonnet）</td><td>~10-20</td><td>1×</td><td class="wrap">~5000-10000 次</td></tr>
+            <tr><td class="wrap">🟢 纯文字 moco</td><td>~250-700</td><td><strong>~25× 量级</strong></td><td class="wrap">~140-400 次</td></tr>
+            <tr><td class="wrap">🔵 r1_only moco（默认带图）</td><td>~270-720</td><td><strong>~27× 量级</strong></td><td class="wrap">~140-370 次</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="cost-modal-note cost-modal-note-sub">
+        💡 切到 Sonnet 主智能体后，编排部分自动减半，moco 单次降到 ~250 积分以内最稳。
+      </p>
+
+      <h3 class="cost-modal-h3">表 3：主流模型单次质询积分（实测均值）</h3>
+      <div class="cost-modal-table-scroll">
+        <table class="cost-modal-table">
+          <thead><tr><th>模型</th><th>单次积分</th><th class="wrap">推荐用途</th></tr></thead>
+          <tbody>
+            <tr><td><code>claude-opus-4.7-1m</code></td><td>~50-80</td><td class="wrap">复杂架构 / moco 编排 / 重度推理</td></tr>
+            <tr><td><code>claude-sonnet-4.6-1m</code> ⭐</td><td>~10-20</td><td class="wrap"><strong>日常推荐</strong></td></tr>
+            <tr><td><code>claude-haiku-4.5</code></td><td>~0.5-1</td><td class="wrap">简单批处理 / 极致省钱</td></tr>
+            <tr><td><code>gpt-5.4</code></td><td>~5-8</td><td class="wrap">客观说明文风格</td></tr>
+            <tr><td><code>gemini-3.0-pro</code></td><td>~5-10</td><td class="wrap">结构化偏好</td></tr>
+            <tr><td><code>deepseek-v3-2-volc-ioa</code></td><td><strong>0</strong></td><td class="wrap">严密推理 / 国产首选 / <strong>免费</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="cost-modal-note cost-modal-note-sub">
+        💡 国产 ioa 类模型（DeepSeek / GLM / Hunyuan）当前实测 <strong>0 积分</strong>——
+        moco 默认阵容里有 DeepSeek V3.2，已在为你省积分。
+      </p>
+
+      <h3 class="cost-modal-h3">附录：今日某段实测明细（16:00-16:24）</h3>
+      <div class="cost-modal-table-scroll">
+        <table class="cost-modal-table">
+          <thead><tr><th>时间</th><th class="wrap">模型</th><th>积分</th><th class="wrap">备注</th></tr></thead>
+          <tbody>
+            <tr><td>16:00-16:08</td><td class="wrap"><code>claude-opus-4.7-1m</code> ×6</td><td>1086.62</td><td class="wrap">主智能体高频编排（含一笔 688 大单 = 长上下文）</td></tr>
+            <tr><td>16:15-16:17</td><td class="wrap">Opus + Sonnet + GPT + Gemini + GLM 并发</td><td>329.54</td><td class="wrap"><strong>典型 moco 一跑</strong>（4 家初答 + 编排）</td></tr>
+            <tr><td>16:20-16:23</td><td class="wrap">Opus ×11 + Haiku ×1</td><td>92.77</td><td class="wrap">短轮次主智能体收尾</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="cost-modal-note cost-modal-note-sub">
+        24 分钟段合计 <strong>~1509 积分</strong>（≈ $15）；今日全天 4015 积分（≈ $40，占月配额 4%）。
+        完整版本与历史：<a href="https://github.com/MoneyMoneyGo/moco-skill/blob/main/COST_REFERENCE.md" target="_blank" rel="noopener">COST_REFERENCE.md @ GitHub</a>
+      </p>
+    </div>
+  </div>
 </div>
 
 <button class="back-to-top" id="backToTop" aria-label="回到顶部" title="回到顶部"><span class="back-to-top-icon">↑</span></button>
@@ -2520,6 +2861,99 @@ document.addEventListener('DOMContentLoaded', function() {
     requestAnimationFrame(step);
   });
   onScroll();
+})();
+</script>
+
+<script>
+// ===== VIEWPORT HINT LOGIC =====
+// 在视口 < 1081px 时显示横幅；拉宽后自动隐藏；用户点 × 关闭后本次会话不再出现。
+(function () {
+  var MIN_WIDTH = 1081;
+  var hint = document.getElementById('viewportHint');
+  var widthSpan = document.getElementById('vpHintWidth');
+  var dismissBtn = document.getElementById('viewportHintDismiss');
+  if (!hint || !widthSpan || !dismissBtn) return;
+
+  var dismissed = false;
+
+  function update() {
+    if (dismissed) { hint.hidden = true; return; }
+    var vw = window.innerWidth || document.documentElement.clientWidth;
+    widthSpan.textContent = vw;
+    hint.hidden = (vw >= MIN_WIDTH);
+  }
+
+  dismissBtn.addEventListener('click', function () {
+    dismissed = true;
+    hint.hidden = true;
+  });
+
+  window.addEventListener('resize', update);
+  update();
+})();
+</script>
+
+<script>
+// ===== IMAGE LIGHTBOX LOGIC =====
+// vision-header 缩略图 button 点击 → 弹大图覆盖层；Esc / 遮罩 / 大图 / ✕ 关闭。
+(function () {
+  var lightbox = document.getElementById('imageLightbox');
+  var img      = document.getElementById('imageLightboxImg');
+  var overlay  = document.getElementById('imageLightboxOverlay');
+  var closeBtn = document.getElementById('imageLightboxClose');
+  if (!lightbox || !img) return;
+
+  function open(src) {
+    img.src = src;
+    lightbox.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    lightbox.hidden = true;
+    img.src = '';
+    document.body.style.overflow = '';
+  }
+
+  document.querySelectorAll('.vision-header-thumb-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var src = btn.getAttribute('data-image-src');
+      if (src) open(src);
+    });
+  });
+  if (overlay)  overlay.addEventListener('click', close);
+  if (closeBtn) closeBtn.addEventListener('click', close);
+  if (img)      img.addEventListener('click', close);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !lightbox.hidden) close();
+  });
+})();
+</script>
+
+<script>
+// ===== COST MODAL LOGIC =====
+// footer 「📊 积分消耗 ⓘ」点击 → 弹出 modal；Esc / 遮罩 / ✕ 关闭。
+(function () {
+  var trigger = document.getElementById('footerCostTrigger');
+  var modal   = document.getElementById('costModal');
+  var overlay = document.getElementById('costModalOverlay');
+  var closeBtn = document.getElementById('costModalClose');
+  if (!trigger || !modal) return;
+
+  function open() {
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    modal.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  trigger.addEventListener('click', open);
+  if (overlay) overlay.addEventListener('click', close);
+  if (closeBtn) closeBtn.addEventListener('click', close);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !modal.hidden) close();
+  });
 })();
 </script>
 

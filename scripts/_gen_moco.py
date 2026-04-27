@@ -715,19 +715,6 @@ def _siege_verdict(target, atk_win, def_win, draws, total):
     return f"{target} " + "、".join(parts)
 
 
-def _counter_verdict(actor, targets, win, lost, draw):
-    """回手战果：actor 反挑 targets 的结果。"""
-    tgt_str = "、".join(f"<strong>{t}</strong>" for t in targets)
-    if win and not lost and not draw:
-        return f"反手挑 {tgt_str} 成功得手"
-    if lost and not win and not draw:
-        return f"反手挑 {tgt_str} 未能得手"
-    if draw and not win and not lost:
-        return f"反手挑 {tgt_str} 打成平手"
-    # 混合
-    return f"反手挑 {tgt_str} 互有胜负"
-
-
 def _clash_verdict(a, b, r1, r2):
     """对攻战果：r1=a挑b结果, r2=b挑a结果。"""
     # a 赢场数

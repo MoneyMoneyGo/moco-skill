@@ -9,6 +9,31 @@
 
 ---
 
+## 2026.04.27.18 — 清洁日：删废代码 + 替换旧 demo
+
+### Removed（必清，0 风险）
+
+- `assets/tokens-inspector.html`（17 KB / 559 行）：开发期 token 调试工具，从未被任何生产代码引用
+- `_gen_moco.py::_counter_verdict()`（11 行）：定义了从未调用，旧版"对攻战果"叙事的残留
+- `compare-template.html`：
+  - `.concept-diagram` CSS（7 行）：早期 hero 头图功能，已被 vision-header 取代
+  - `.debate-badge` CSS（16 行）：red badge 样式，实际渲染从未使用
+  - `.debate-count` CSS（7 行）：代码注释已显式声明被 `.debate-panel-stat` 替换
+
+### Replaced
+
+- `examples/moco-plank-1min.html`（122 KB，旧名 MoCompare + 旧阵容含 GLM-4.7） → 删除
+- `examples/moco-logic-training-2026-04-27.html`（141 KB，新阵容 + 新名 MoCo + 完整 R1-R4 + 裁判判词）：用 `fix-healthy.json` 这份纯文字 fixture 重新生成，无外部依赖（不引用本地图片，clone 后开箱可看）
+- README.md 的 `examples/` 行更新为新文件名
+
+### 验证
+
+- `check_lineup.py` exit 0
+- `_gen_moco.py` 跑两份正向 fixture 全通过
+- 新 demo 浏览器打开渲染正常
+
+---
+
 ## 2026.04.27.17 — 新增 README.md（同事一键安装指引）
 
 ### 新增文档
