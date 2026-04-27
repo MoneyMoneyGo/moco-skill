@@ -341,15 +341,68 @@
     gap: var(--gap-inline);
     margin: var(--gap-block-s) auto 0;
   }
+  /* 缩略图改为 button（v2026.04.27.8）触发页内 lightbox，避免开新 tab 体验割裂 */
+  .vision-header-thumb-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: zoom-in;
+    line-height: 0;
+  }
   .vision-header-thumb {
     height: 48px;
     width: auto;
     border-radius: 4px;
     border: 1px solid var(--border);
-    cursor: zoom-in;
     transition: transform var(--motion-dur) var(--motion-ease);
   }
-  .vision-header-thumb:hover { transform: scale(1.05); }
+  .vision-header-thumb-btn:hover .vision-header-thumb { transform: scale(1.05); }
+
+  /* ===== IMAGE LIGHTBOX (page-internal full-screen image viewer) ===== */
+  .image-lightbox[hidden] { display: none; }
+  .image-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 250;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--gap-block-m);
+  }
+  .image-lightbox-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    cursor: zoom-out;
+    animation: cost-modal-fade 0.2s ease-out;
+  }
+  .image-lightbox-img {
+    position: relative;
+    max-width: 95vw;
+    max-height: 92vh;
+    border-radius: 4px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    animation: cost-modal-slide 0.25s ease-out;
+    cursor: zoom-out;
+  }
+  .image-lightbox-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: white;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 50%;
+    padding: 0;
+    z-index: 1;
+    transition: background var(--motion-dur) var(--motion-ease);
+  }
+  .image-lightbox-close:hover { background: rgba(255, 255, 255, 0.25); }
   /* ===== ROSTER BAR (now inside hero) ===== */
   .roster-section {
     margin: 0;
@@ -1697,7 +1750,9 @@
     background: var(--bg, #fff);
     border: 1px solid var(--border);
     border-radius: 12px;
-    max-width: 720px;
+    /* 自适应：在视口允许时变更宽，确保表格短词（如"4 并发" / "~16-24k"）能一行放下；
+       受 .cost-modal { padding: var(--gap-block-m) } 的限制不会触边。 */
+    max-width: min(960px, calc(100vw - 2 * var(--gap-block-m)));
     width: 100%;
     max-height: 85vh;
     overflow: auto;
@@ -1757,9 +1812,18 @@
   .cost-modal-table th,
   .cost-modal-table td {
     text-align: left;
-    padding: 6px 8px;
+    padding: 6px 10px;
     border-bottom: 1px solid var(--border);
     vertical-align: top;
+    /* 关键：默认不让短词换行（"4 并发" / "~16-24k" / "~2.5" 整体显示）。
+       内容里的长描述（含空格的英文/中文短句）通过 .cost-modal-table-wrap 类覆盖。 */
+    white-space: nowrap;
+  }
+  /* 长文本列允许换行：模型列、推荐用途列、备注列 */
+  .cost-modal-table td.wrap,
+  .cost-modal-table th.wrap {
+    white-space: normal;
+    min-width: 200px;
   }
   .cost-modal-table th {
     font-weight: 600;
@@ -1771,7 +1835,14 @@
     background: var(--hover-bg, rgba(0,0,0,0.04));
     padding: 1px 4px;
     border-radius: 3px;
+    white-space: nowrap;
   }
+  /* 表格容器允许横向滚动兜底——窄屏极端情况不爆版 */
+  .cost-modal-table-scroll {
+    overflow-x: auto;
+    margin-bottom: var(--gap-block-s);
+  }
+  .cost-modal-table-scroll .cost-modal-table { margin-bottom: 0; }
   @keyframes cost-modal-fade {
     from { opacity: 0; }
     to   { opacity: 1; }
@@ -2503,7 +2574,14 @@ document.addEventListener('DOMContentLoaded', function() {
   </button>
 </div>
 
-<!-- ===== COST REFERENCE MODAL（点击 footer ⓘ 触发；Esc / 遮罩 / ✕ 关闭） ===== -->
+<!-- ===== IMAGE LIGHTBOX（vision-header 缩略图点击触发；Esc / 遮罩 / ✕ 关闭） ===== -->
+<div class="image-lightbox" id="imageLightbox" role="dialog" aria-modal="true" aria-label="原图查看" hidden>
+  <div class="image-lightbox-overlay" id="imageLightboxOverlay"></div>
+  <button class="image-lightbox-close" id="imageLightboxClose" aria-label="关闭">✕</button>
+  <img class="image-lightbox-img" id="imageLightboxImg" alt="原图（点击空白处或按 Esc 关闭）" />
+</div>
+
+<!-- ===== COST REFERENCE MODAL（点击 footer ⓘ 触发；Esc / 遮罩 / ✕ 关闭） ====================-->
 <div class="cost-modal" id="costModal" role="dialog" aria-modal="true" aria-labelledby="costModalTitle" hidden>
   <div class="cost-modal-overlay" id="costModalOverlay"></div>
   <div class="cost-modal-card" role="document">
@@ -2518,44 +2596,50 @@ document.addEventListener('DOMContentLoaded', function() {
       </p>
 
       <h3 class="cost-modal-h3">表 1：moco 各阶段调用细节</h3>
-      <table class="cost-modal-table">
-        <thead><tr><th>阶段</th><th>调用数</th><th>模型</th><th>单次 token 量级</th><th>小计</th></tr></thead>
-        <tbody>
-          <tr><td>R1 初答</td><td>4 并发</td><td>Sonnet 4.6 / GPT 5.4 / Gemini 3.0 Pro / DeepSeek V3.2</td><td>~3-6k / 家</td><td><strong>~16-24k</strong></td></tr>
-          <tr><td>R2 挑战</td><td>4 并发</td><td>同 R1（input 偏长 1.5×）</td><td>~5-9k / 家</td><td><strong>~24-36k</strong></td></tr>
-          <tr><td>R3 反驳</td><td>~2.5</td><td>被挑战方</td><td>~4-7k</td><td><strong>~10-18k</strong></td></tr>
-          <tr><td>R4 裁判</td><td>~2.5</td><td><code>claude-opus-4.7-1m</code></td><td>~6-10k</td><td><strong>~15-25k</strong></td></tr>
-          <tr><td>WorkBuddy 主智能体编排</td><td>5-8 次</td><td><strong>当前会话模型</strong>（顶部选择器决定）</td><td>~3-8k / 次</td><td><strong>~20-65k</strong></td></tr>
-          <tr><td>R1 视觉 token（仅 r1_only）</td><td>4</td><td>视觉编码</td><td>~1-2k / 家</td><td><strong>~4-8k</strong></td></tr>
-        </tbody>
-      </table>
+      <div class="cost-modal-table-scroll">
+        <table class="cost-modal-table">
+          <thead><tr><th>阶段</th><th>调用数</th><th class="wrap">模型</th><th>单次 token 量级</th><th>小计</th></tr></thead>
+          <tbody>
+            <tr><td>R1 初答</td><td>4 并发</td><td class="wrap">Sonnet 4.6 / GPT 5.4 / Gemini 3.0 Pro / DeepSeek V3.2</td><td>~3-6k / 家</td><td><strong>~16-24k</strong></td></tr>
+            <tr><td>R2 挑战</td><td>4 并发</td><td class="wrap">同 R1（input 偏长 1.5×）</td><td>~5-9k / 家</td><td><strong>~24-36k</strong></td></tr>
+            <tr><td>R3 反驳</td><td>~2.5</td><td class="wrap">被挑战方</td><td>~4-7k</td><td><strong>~10-18k</strong></td></tr>
+            <tr><td>R4 裁判</td><td>~2.5</td><td class="wrap"><code>claude-opus-4.7-1m</code></td><td>~6-10k</td><td><strong>~15-25k</strong></td></tr>
+            <tr><td>WorkBuddy 主智能体编排</td><td>5-8 次</td><td class="wrap"><strong>当前会话模型</strong>（顶部选择器决定）</td><td>~3-8k / 次</td><td><strong>~20-65k</strong></td></tr>
+            <tr><td>R1 视觉 token（仅 r1_only）</td><td>4</td><td class="wrap">视觉编码</td><td>~1-2k / 家</td><td><strong>~4-8k</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
       <p class="cost-modal-note cost-modal-note-sub">
         💡 主智能体编排成本"自动跟随会话当前模型"——不在 moco 代码里写死。
         切到 Sonnet 4.6 1M 即可减半，无需改任何 moco 代码。
       </p>
 
       <h3 class="cost-modal-h3">表 2：消耗对照（含基准）</h3>
-      <table class="cost-modal-table">
-        <thead><tr><th>模式</th><th>等效 token 量级</th><th>相对单次质询</th></tr></thead>
-        <tbody>
-          <tr><td>🟦 单次 WorkBuddy 质询基准（200/1000 字）</td><td>~3-8k</td><td>1×</td></tr>
-          <tr><td>🟢 纯文字 moco</td><td>~85-160k</td><td><strong>+20× 量级</strong></td></tr>
-          <tr><td>🔵 r1_only moco（默认带图）</td><td>~90-170k</td><td><strong>+22× 量级</strong></td></tr>
-        </tbody>
-      </table>
+      <div class="cost-modal-table-scroll">
+        <table class="cost-modal-table">
+          <thead><tr><th class="wrap">模式</th><th>等效 token 量级</th><th>相对单次质询</th></tr></thead>
+          <tbody>
+            <tr><td class="wrap">🟦 单次 WorkBuddy 质询基准（200/1000 字）</td><td>~3-8k</td><td>1×</td></tr>
+            <tr><td class="wrap">🟢 纯文字 moco</td><td>~85-160k</td><td><strong>+20× 量级</strong></td></tr>
+            <tr><td class="wrap">🔵 r1_only moco（默认带图）</td><td>~90-170k</td><td><strong>+22× 量级</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
 
       <h3 class="cost-modal-h3">表 3：主流模型单次质询 token 量级</h3>
-      <table class="cost-modal-table">
-        <thead><tr><th>模型</th><th>单次量级</th><th>推荐用途</th></tr></thead>
-        <tbody>
-          <tr><td><code>claude-opus-4.7-1m</code></td><td>~6-10k</td><td>复杂架构 / moco 编排 / 重度推理</td></tr>
-          <tr><td><code>claude-sonnet-4.6-1m</code> ⭐</td><td>~3-6k</td><td><strong>日常推荐</strong></td></tr>
-          <tr><td><code>claude-haiku-4.5</code></td><td>~1-3k</td><td>简单批处理 / 极致省钱</td></tr>
-          <tr><td><code>gpt-5.4</code></td><td>~3-6k</td><td>客观说明文风格</td></tr>
-          <tr><td><code>gemini-3.0-pro</code></td><td>~3-6k</td><td>结构化偏好</td></tr>
-          <tr><td><code>deepseek-v3-2-volc-ioa</code></td><td>~2-4k</td><td>严密推理 / 国产首选</td></tr>
-        </tbody>
-      </table>
+      <div class="cost-modal-table-scroll">
+        <table class="cost-modal-table">
+          <thead><tr><th>模型</th><th>单次量级</th><th class="wrap">推荐用途</th></tr></thead>
+          <tbody>
+            <tr><td><code>claude-opus-4.7-1m</code></td><td>~6-10k</td><td class="wrap">复杂架构 / moco 编排 / 重度推理</td></tr>
+            <tr><td><code>claude-sonnet-4.6-1m</code> ⭐</td><td>~3-6k</td><td class="wrap"><strong>日常推荐</strong></td></tr>
+            <tr><td><code>claude-haiku-4.5</code></td><td>~1-3k</td><td class="wrap">简单批处理 / 极致省钱</td></tr>
+            <tr><td><code>gpt-5.4</code></td><td>~3-6k</td><td class="wrap">客观说明文风格</td></tr>
+            <tr><td><code>gemini-3.0-pro</code></td><td>~3-6k</td><td class="wrap">结构化偏好</td></tr>
+            <tr><td><code>deepseek-v3-2-volc-ioa</code></td><td>~2-4k</td><td class="wrap">严密推理 / 国产首选</td></tr>
+          </tbody>
+        </table>
+      </div>
 
       <p class="cost-modal-note cost-modal-note-sub">
         完整版本与历史变更记录：<a href="https://github.com/MoneyMoneyGo/moco-skill/blob/main/COST_REFERENCE.md" target="_blank" rel="noopener">COST_REFERENCE.md @ GitHub</a>
@@ -2621,6 +2705,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
   window.addEventListener('resize', update);
   update();
+})();
+</script>
+
+<script>
+// ===== IMAGE LIGHTBOX LOGIC =====
+// vision-header 缩略图 button 点击 → 弹大图覆盖层；Esc / 遮罩 / 大图 / ✕ 关闭。
+(function () {
+  var lightbox = document.getElementById('imageLightbox');
+  var img      = document.getElementById('imageLightboxImg');
+  var overlay  = document.getElementById('imageLightboxOverlay');
+  var closeBtn = document.getElementById('imageLightboxClose');
+  if (!lightbox || !img) return;
+
+  function open(src) {
+    img.src = src;
+    lightbox.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    lightbox.hidden = true;
+    img.src = '';
+    document.body.style.overflow = '';
+  }
+
+  document.querySelectorAll('.vision-header-thumb-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var src = btn.getAttribute('data-image-src');
+      if (src) open(src);
+    });
+  });
+  if (overlay)  overlay.addEventListener('click', close);
+  if (closeBtn) closeBtn.addEventListener('click', close);
+  if (img)      img.addEventListener('click', close);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !lightbox.hidden) close();
+  });
 })();
 </script>
 

@@ -9,6 +9,27 @@
 
 ---
 
+## 2026.04.27.8 — 修两个 UX 小坑
+
+### Fix
+
+- **修：cost-modal 表格被强制折行**（即使屏幕够宽也折）：
+  - `.cost-modal-card` max-width 从 `720px` 改为 `min(960px, calc(100vw - 2 * gap))` —— 视口允许时变更宽
+  - 表格短词（"4 并发" / "~16-24k" / "~2.5"）默认 `white-space: nowrap`，不再被拆字符
+  - 长文本列（模型 / 推荐用途）打 `.wrap` 类允许换行
+  - 表格外层包 `.cost-modal-table-scroll` 兜底窄屏可横向滚动
+- **修：vision-header 缩略图点击后无法关闭**（之前用 `<a target="_blank">` 开新 tab，必须用浏览器 UI 关）：
+  - 改为 `<button>` 触发**页内 lightbox**（参考 cost-modal 的关闭机制）
+  - 点击 ✕ / 遮罩 / 大图本身 / Esc 都能关
+  - 复用现有 `cost-modal-fade` / `cost-modal-slide` 动画，design tokens 一致
+
+### 兼容性
+
+- Schema 不变；旧 debate-data.json 完全兼容
+- 13/13 回归 fixture 全绿
+
+---
+
 ## 2026.04.27.7 — 战绩条文案改"被挑战 N 次"
 
 ### Fix

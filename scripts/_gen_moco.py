@@ -509,10 +509,15 @@ def build_vision_header():
     thumb_imgs = []
     for p in QUESTION_IMAGE_PATHS:
         full_esc = html_escape(p)
+        # 不再用 <a target="_blank">（开新 tab 浏览器自带 UI 才能关，体验割裂）。
+        # 改为 button 触发页内 lightbox（点击放大；遮罩 / Esc / ✕ 关闭）。
         thumb_imgs.append(
-            f'<a href="{full_esc}" target="_blank" rel="noopener" title="{html_escape(tooltip)}">'
+            f'<button type="button" class="vision-header-thumb-btn" '
+            f'data-image-src="{full_esc}" '
+            f'title="{html_escape(tooltip)}" '
+            f'aria-label="点击放大查看原图">'
             f'<img class="vision-header-thumb" src="{full_esc}" alt="问题原图" />'
-            f'</a>'
+            f'</button>'
         )
 
     return (
