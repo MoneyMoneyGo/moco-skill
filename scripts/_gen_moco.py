@@ -348,7 +348,7 @@ def validate_debate_data(data):
     # ----- Soft S5: challenges_issued ↔ challenges_received 对偶配对 -----
     # For every (attacker, target) pair declared in attacker.challenges_issued,
     # there should be a matching entry in target.challenges_received with from=attacker.
-    # Mismatches usually mean stale data (model renamed, e.g. GLM-4.7 → DeepSeek V3.2)
+    # Mismatches usually mean stale data (model renamed during a lineup swap, e.g. model A → model B)
     # or typo in from/target name. Rendering still works but the clash card will
     # show "未反驳" because rebuttal lookup fails.
     by_name = {m.get("name"): m for m in models if m.get("name")}

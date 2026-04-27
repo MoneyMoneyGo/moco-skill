@@ -597,6 +597,28 @@ Instructions:
 | V4 | R3 attached image 但 R2 没声明 needs | exit 3 |
 | V5 | r1_only 模式下声明了 needs 但实际没传 | exit 3 |
 
+## 阵容变更流程（换/加/减模型时必须遵循）
+
+**真相源**：本文件（SKILL.md）第 87-90 行的默认阵容表 + 裁判表，是唯一 authoritative source。
+
+**换阵容的唯一安全流程**：
+1. 改 SKILL.md 的默认阵容表（Display Name / model_id / 颜色 / provider）
+2. 跑守门员：
+   ```bash
+   python /Users/soy/.workbuddy/skills/moco/scripts/check_lineup.py
+   ```
+3. 守门员会扫描所有**活跃 fixture**（`moco-regression-tests/fix-healthy.json` 等正向 fixture），任何模型名/model_id 不在新阵容白名单里就 **exit 4** 阻断，并告诉你是哪个 fixture 哪一行需要同步改。
+4. 按守门员指示改 fixture（通常是把旧 display name 和 from 字段全局替换成新名字）。
+5. 重跑守门员直到 **exit 0**。
+6. bump VERSION + 写 CHANGELOG + push。
+
+**守门员的扫描白名单 / 黑名单**：
+- **扫**：`moco-regression-tests/*.json`（正向 fixture）、`scripts/*.py`、`assets/*.html`
+- **跳过**：`fix-h[1-4]-*`、`fix-v[1-5]-*`、`fix-s[1-5]-*`、`bad-*`、`orphan-*`（负向回归 fixture，故意坏数据，不纳入阵容一致性）
+- **豁免**：`CHANGELOG.md` / `COST_REFERENCE.md` / `MEMORY.md` / `examples/*.html`（叙事/历史快照，允许含旧模型名）
+
+**S-L1 软告警**：即使没 hard fail，若活跃文件里出现已淘汰的旧模型名（如 `GLM-4.7`），控制台会告警提示"是否忘记同步"。
+
 ## 积分消耗参考（COST_REFERENCE.md）
 
 详细的积分消耗对照表（含 R1-R4 各阶段、主智能体编排、单次质询基准、主流模型对照、今日实测时段附录）见仓库根目录的 `COST_REFERENCE.md`，也通过 moco HTML 报告页底部"📊 积分消耗 ⓘ"按钮内嵌呈现给读者。

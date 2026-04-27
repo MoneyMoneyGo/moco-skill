@@ -9,6 +9,37 @@
 
 ---
 
+## 2026.04.27.16 — 药方 2：check_lineup.py 阵容一致性门禁
+
+### 新增工具
+
+- **`scripts/check_lineup.py`**：MoCo 阵容一致性门禁。扫描仓库所有活跃数据文件，检查其中引用的模型名/model_id 是否与 SKILL.md 声明的"默认阵容"一致。
+  - **真相源**：SKILL.md 第 87-90 行默认阵容表 + 裁判表（claude-opus-*）
+  - **扫描**：`moco-regression-tests/fix-*.json`（正向）、`scripts/*.py`、`assets/*.html`
+  - **跳过**：负向 fixture（`fix-h[1-4]-*`/`fix-v[1-5]-*`/`fix-s[1-5]-*`/`bad-*`/`orphan-*`）、历史文档（CHANGELOG/COST/MEMORY/examples）
+  - **H-L1~H-L3**：`model_id` / `name` / `from` / `target` / `judge_model` / `judge_model_id` 必须 ∈ 当前阵容白名单
+  - **S-L1**：活跃文件里出现已淘汰的旧模型名（如 `GLM-4.7`）→ 软告警
+  - **exit 4**：hard fail（与 _gen_moco.py 的 exit 3 区分）
+- **CLI**：`python scripts/check_lineup.py [--only-fixtures] [--quiet]`
+
+### Fix
+
+- **修 `moco-regression-tests/fix-healthy.json`**：`challenges_received[1].from` 从 `"GLM-4.7"` → `"DeepSeek V3.2"`；rebuttal 正文"感谢 GLM-4.7"同步替换。这是昨天 v5 换阵容时另一份漏改的 fixture（昨天只修了 vision-healthy）。
+- **修 `_gen_moco.py` S5 警告注释**：去掉 `GLM-4.7 → DeepSeek V3.2` 的字面例子，改为泛化字符串 "model A → model B"，避免守门员扫自己。
+
+### SKILL.md 新增章节
+
+- **阵容变更流程**：明文规定换/加/减模型时的 6 步流程（改 SKILL 表 → 跑 check_lineup → 按错报修 fixture → 反复直到 exit 0 → bump → push）
+- 说明守门员的扫描范围 / 跳过规则 / 豁免规则
+
+### 回归验证
+
+- 正向：`fix-healthy.json` / `fix-vision-healthy.json` 全通过
+- 负向模拟：把 fixture 里 DeepSeek 回改成 GLM-4.7 → check_lineup exit 4，准确报出不一致行
+- 11 份负向 fixture 全部正确跳过，不误伤
+
+---
+
 ## 2026.04.27.15 — 新增 S5 软校验 + 修 fixture 遗留的 GLM 旧名
 
 ### Behavior
