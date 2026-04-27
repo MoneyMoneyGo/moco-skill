@@ -2591,21 +2591,21 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div class="cost-modal-body">
       <p class="cost-modal-note">
-        所有数字基于 <strong>200 字 prompt + 1000 字 output</strong> 标准估算，token 数为"等效 input token"（output 已按 5× 折算）。
-        实际值受上下文累积、工具调用、模型计费方式影响，可能 ±30%。本表是数量级参考，不是计费承诺。
+        企业版 WorkBuddy 每月给每位员工 <strong>10 万积分</strong>（约合 $1000 成本，1 积分 ≈ $0.01）。
+        以下数字基于 2026-04-27 真实使用数据校准（实测 144 笔 = 4015 积分），±30% 浮动。
       </p>
 
-      <h3 class="cost-modal-h3">表 1：moco 各阶段调用细节</h3>
+      <h3 class="cost-modal-h3">表 1：moco 各阶段实测积分</h3>
       <div class="cost-modal-table-scroll">
         <table class="cost-modal-table">
-          <thead><tr><th>阶段</th><th>调用数</th><th class="wrap">模型</th><th>单次 token 量级</th><th>小计</th></tr></thead>
+          <thead><tr><th>阶段</th><th>调用数</th><th class="wrap">模型</th><th>单次积分</th><th>小计</th></tr></thead>
           <tbody>
-            <tr><td>R1 初答</td><td>4 并发</td><td class="wrap">Sonnet 4.6 / GPT 5.4 / Gemini 3.0 Pro / DeepSeek V3.2</td><td>~3-6k / 家</td><td><strong>~16-24k</strong></td></tr>
-            <tr><td>R2 挑战</td><td>4 并发</td><td class="wrap">同 R1（input 偏长 1.5×）</td><td>~5-9k / 家</td><td><strong>~24-36k</strong></td></tr>
-            <tr><td>R3 反驳</td><td>~2.5</td><td class="wrap">被挑战方</td><td>~4-7k</td><td><strong>~10-18k</strong></td></tr>
-            <tr><td>R4 裁判</td><td>~2.5</td><td class="wrap"><code>claude-opus-4.7-1m</code></td><td>~6-10k</td><td><strong>~15-25k</strong></td></tr>
-            <tr><td>WorkBuddy 主智能体编排</td><td>5-8 次</td><td class="wrap"><strong>当前会话模型</strong>（顶部选择器决定）</td><td>~3-8k / 次</td><td><strong>~20-65k</strong></td></tr>
-            <tr><td>R1 视觉 token（仅 r1_only）</td><td>4</td><td class="wrap">视觉编码</td><td>~1-2k / 家</td><td><strong>~4-8k</strong></td></tr>
+            <tr><td>R1 初答</td><td>4 并发</td><td class="wrap">Sonnet 4.6 / GPT 5.4 / Gemini 3.0 Pro / DeepSeek V3.2</td><td>~5-15 / 家</td><td><strong>~25-45</strong></td></tr>
+            <tr><td>R2 挑战</td><td>4 并发</td><td class="wrap">同 R1（含其他 3 家答案 input 偏长）</td><td>~10-25 / 家</td><td><strong>~40-80</strong></td></tr>
+            <tr><td>R3 反驳</td><td>~2.5</td><td class="wrap">被挑战方</td><td>~10-25</td><td><strong>~25-60</strong></td></tr>
+            <tr><td>R4 裁判</td><td>~2.5</td><td class="wrap"><code>claude-opus-4.7-1m</code></td><td>~30-80</td><td><strong>~75-200</strong></td></tr>
+            <tr><td>WorkBuddy 主智能体编排</td><td>5-8 次</td><td class="wrap"><strong>当前会话模型</strong>（顶部选择器决定）</td><td>~15-100 / 次</td><td><strong>~80-500</strong></td></tr>
+            <tr><td>R1 视觉积分（仅 r1_only）</td><td>4</td><td class="wrap">视觉编码</td><td>~2-5 / 家</td><td><strong>~10-20</strong></td></tr>
           </tbody>
         </table>
       </div>
@@ -2614,35 +2614,54 @@ document.addEventListener('DOMContentLoaded', function() {
         切到 Sonnet 4.6 1M 即可减半，无需改任何 moco 代码。
       </p>
 
-      <h3 class="cost-modal-h3">表 2：消耗对照（含基准）</h3>
+      <h3 class="cost-modal-h3">表 2：积分消耗对照（含月配额视角）</h3>
       <div class="cost-modal-table-scroll">
         <table class="cost-modal-table">
-          <thead><tr><th class="wrap">模式</th><th>等效 token 量级</th><th>相对单次质询</th></tr></thead>
+          <thead><tr><th class="wrap">模式</th><th>单次积分</th><th>相对单次质询</th><th>月配额可跑</th></tr></thead>
           <tbody>
-            <tr><td class="wrap">🟦 单次 WorkBuddy 质询基准（200/1000 字）</td><td>~3-8k</td><td>1×</td></tr>
-            <tr><td class="wrap">🟢 纯文字 moco</td><td>~85-160k</td><td><strong>+20× 量级</strong></td></tr>
-            <tr><td class="wrap">🔵 r1_only moco（默认带图）</td><td>~90-170k</td><td><strong>+22× 量级</strong></td></tr>
+            <tr><td class="wrap">🟦 单次 WorkBuddy 质询基准（Sonnet）</td><td>~10-20</td><td>1×</td><td class="wrap">~5000-10000 次</td></tr>
+            <tr><td class="wrap">🟢 纯文字 moco</td><td>~250-700</td><td><strong>~25× 量级</strong></td><td class="wrap">~140-400 次</td></tr>
+            <tr><td class="wrap">🔵 r1_only moco（默认带图）</td><td>~270-720</td><td><strong>~27× 量级</strong></td><td class="wrap">~140-370 次</td></tr>
           </tbody>
         </table>
       </div>
-
-      <h3 class="cost-modal-h3">表 3：主流模型单次质询 token 量级</h3>
-      <div class="cost-modal-table-scroll">
-        <table class="cost-modal-table">
-          <thead><tr><th>模型</th><th>单次量级</th><th class="wrap">推荐用途</th></tr></thead>
-          <tbody>
-            <tr><td><code>claude-opus-4.7-1m</code></td><td>~6-10k</td><td class="wrap">复杂架构 / moco 编排 / 重度推理</td></tr>
-            <tr><td><code>claude-sonnet-4.6-1m</code> ⭐</td><td>~3-6k</td><td class="wrap"><strong>日常推荐</strong></td></tr>
-            <tr><td><code>claude-haiku-4.5</code></td><td>~1-3k</td><td class="wrap">简单批处理 / 极致省钱</td></tr>
-            <tr><td><code>gpt-5.4</code></td><td>~3-6k</td><td class="wrap">客观说明文风格</td></tr>
-            <tr><td><code>gemini-3.0-pro</code></td><td>~3-6k</td><td class="wrap">结构化偏好</td></tr>
-            <tr><td><code>deepseek-v3-2-volc-ioa</code></td><td>~2-4k</td><td class="wrap">严密推理 / 国产首选</td></tr>
-          </tbody>
-        </table>
-      </div>
-
       <p class="cost-modal-note cost-modal-note-sub">
-        完整版本与历史变更记录：<a href="https://github.com/MoneyMoneyGo/moco-skill/blob/main/COST_REFERENCE.md" target="_blank" rel="noopener">COST_REFERENCE.md @ GitHub</a>
+        💡 切到 Sonnet 主智能体后，编排部分自动减半，moco 单次降到 ~250 积分以内最稳。
+      </p>
+
+      <h3 class="cost-modal-h3">表 3：主流模型单次质询积分（实测均值）</h3>
+      <div class="cost-modal-table-scroll">
+        <table class="cost-modal-table">
+          <thead><tr><th>模型</th><th>单次积分</th><th class="wrap">推荐用途</th></tr></thead>
+          <tbody>
+            <tr><td><code>claude-opus-4.7-1m</code></td><td>~50-80</td><td class="wrap">复杂架构 / moco 编排 / 重度推理</td></tr>
+            <tr><td><code>claude-sonnet-4.6-1m</code> ⭐</td><td>~10-20</td><td class="wrap"><strong>日常推荐</strong></td></tr>
+            <tr><td><code>claude-haiku-4.5</code></td><td>~0.5-1</td><td class="wrap">简单批处理 / 极致省钱</td></tr>
+            <tr><td><code>gpt-5.4</code></td><td>~5-8</td><td class="wrap">客观说明文风格</td></tr>
+            <tr><td><code>gemini-3.0-pro</code></td><td>~5-10</td><td class="wrap">结构化偏好</td></tr>
+            <tr><td><code>deepseek-v3-2-volc-ioa</code></td><td><strong>0</strong></td><td class="wrap">严密推理 / 国产首选 / <strong>免费</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="cost-modal-note cost-modal-note-sub">
+        💡 国产 ioa 类模型（DeepSeek / GLM / Hunyuan）当前实测 <strong>0 积分</strong>——
+        moco 默认阵容里有 DeepSeek V3.2，已在为你省积分。
+      </p>
+
+      <h3 class="cost-modal-h3">附录：今日某段实测明细（16:00-16:24）</h3>
+      <div class="cost-modal-table-scroll">
+        <table class="cost-modal-table">
+          <thead><tr><th>时间</th><th class="wrap">模型</th><th>积分</th><th class="wrap">备注</th></tr></thead>
+          <tbody>
+            <tr><td>16:00-16:08</td><td class="wrap"><code>claude-opus-4.7-1m</code> ×6</td><td>1086.62</td><td class="wrap">主智能体高频编排（含一笔 688 大单 = 长上下文）</td></tr>
+            <tr><td>16:15-16:17</td><td class="wrap">Opus + Sonnet + GPT + Gemini + GLM 并发</td><td>329.54</td><td class="wrap"><strong>典型 moco 一跑</strong>（4 家初答 + 编排）</td></tr>
+            <tr><td>16:20-16:23</td><td class="wrap">Opus ×11 + Haiku ×1</td><td>92.77</td><td class="wrap">短轮次主智能体收尾</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="cost-modal-note cost-modal-note-sub">
+        24 分钟段合计 <strong>~1509 积分</strong>（≈ $15）；今日全天 4015 积分（≈ $40，占月配额 4%）。
+        完整版本与历史：<a href="https://github.com/MoneyMoneyGo/moco-skill/blob/main/COST_REFERENCE.md" target="_blank" rel="noopener">COST_REFERENCE.md @ GitHub</a>
       </p>
     </div>
   </div>
