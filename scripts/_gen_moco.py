@@ -19,20 +19,167 @@ from pathlib import Path
 
 def _parse_args():
     p = argparse.ArgumentParser(description="Generate moco HTML page.")
-    p.add_argument("--data", required=True, help="Path to debate-data.json")
-    p.add_argument("--output", required=True, help="Path to write the generated HTML")
+    p.add_argument("--data", help="Path to debate-data.json (required unless --update-check-only)")
+    p.add_argument("--output", help="Path to write the generated HTML (required unless --update-check-only)")
     p.add_argument("--template", default=None,
                    help="Path to compare-template.html (default: <skill_root>/assets/compare-template.html)")
     p.add_argument("--md2html", default=None,
                    help="Path to md2html.py (default: ./md2html.py next to this script)")
     p.add_argument("--python", default=sys.executable,
                    help="Python interpreter to run md2html (default: current sys.executable)")
-    return p.parse_args()
+    p.add_argument("--skip-update-check", action="store_true",
+                   help="Skip Pre-Run Update Check (use when offline or in regression tests).")
+    p.add_argument("--update-check-only", action="store_true",
+                   help="Only run update check and exit (no HTML rendering). "
+                        "Exit 0 = up to date or user skipped; Exit 10 = update available; "
+                        "Exit 11 = check failed (e.g. offline).")
+    args = p.parse_args()
+    # Post-validate: --data / --output required unless --update-check-only
+    if not args.update_check_only:
+        if not args.data or not args.output:
+            p.error("--data and --output are required (unless --update-check-only is set).")
+    return args
 
 
 _ARGS = _parse_args()
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _SKILL_ROOT = _SCRIPT_DIR.parent
+
+
+# ---------------------------------------------------------------------------
+# Pre-Run Update Check (走法 A：与 GitHub 远端 VERSION 对比)
+# ---------------------------------------------------------------------------
+# 本地版本源：<skill_root>/VERSION 文件（单行，格式 YYYY.MM.DD.N）
+# 远端版本源：https://raw.githubusercontent.com/MoneyMoneyGo/moco-skill/main/VERSION
+# 本函数 *只报告* 结果，不自作主张更新——是否 pull 由主智能体跟用户协商决定。
+#
+# 退出码（仅当 --update-check-only 时使用）：
+#   0  本地 == 远端，或 --skip-update-check
+#   10 远端 > 本地，需要用户决策
+#   11 检查失败（离线、超时、URL 404 等） —— 此时主智能体应告警但允许继续
+# ---------------------------------------------------------------------------
+MOCO_VERSION_LOCAL_PATH = _SKILL_ROOT / "VERSION"
+MOCO_VERSION_REMOTE_URL = "https://raw.githubusercontent.com/MoneyMoneyGo/moco-skill/main/VERSION"
+
+
+def _read_local_version():
+    try:
+        return MOCO_VERSION_LOCAL_PATH.read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        return None
+
+
+def _fetch_remote_version(timeout=5):
+    """Fetch remote VERSION with short timeout; return (version_str | None, error_str | None)."""
+    import urllib.request
+    import urllib.error
+    try:
+        req = urllib.request.Request(
+            MOCO_VERSION_REMOTE_URL,
+            headers={"User-Agent": "moco-update-check/1"},
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.read().decode("utf-8").strip(), None
+    except urllib.error.URLError as e:
+        return None, f"network error: {e.reason}"
+    except Exception as e:
+        return None, f"fetch failed: {e}"
+
+
+def _version_tuple(v):
+    """Parse 'YYYY.MM.DD.N' into a comparable tuple; returns None if malformed."""
+    try:
+        parts = [int(x) for x in v.strip().split(".")]
+        return tuple(parts) if len(parts) >= 3 else None
+    except (ValueError, AttributeError):
+        return None
+
+
+def check_update_gate():
+    """Compare local VERSION vs remote VERSION. Returns a status dict — does NOT exit by itself.
+
+    Caller (main flow or --update-check-only) decides what to do based on the dict.
+    """
+    status = {
+        "local_version": _read_local_version(),
+        "latest_version": None,
+        "comparison": None,   # 'equal' | 'local_newer' | 'remote_newer' | 'unknown'
+        "error": None,
+    }
+    if status["local_version"] is None:
+        status["error"] = f"local VERSION file not found at {MOCO_VERSION_LOCAL_PATH}"
+        status["comparison"] = "unknown"
+        return status
+
+    remote, err = _fetch_remote_version()
+    if err is not None:
+        status["error"] = err
+        status["comparison"] = "unknown"
+        return status
+
+    status["latest_version"] = remote
+    local_t = _version_tuple(status["local_version"])
+    remote_t = _version_tuple(status["latest_version"])
+    if local_t is None or remote_t is None:
+        status["error"] = "version parse failed"
+        status["comparison"] = "unknown"
+        return status
+
+    if local_t == remote_t:
+        status["comparison"] = "equal"
+    elif local_t > remote_t:
+        status["comparison"] = "local_newer"
+    else:
+        status["comparison"] = "remote_newer"
+    return status
+
+
+def _run_update_check_and_maybe_exit():
+    """Called unconditionally at script start (unless --skip-update-check).
+
+    For normal runs: print a short notice to stderr, never block.
+    For --update-check-only: exit with the structured code.
+    """
+    if _ARGS.skip_update_check:
+        if _ARGS.update_check_only:
+            sys.stderr.write("(update check skipped by --skip-update-check)\n")
+            sys.exit(0)
+        return
+
+    status = check_update_gate()
+    # Render a concise one-line report to stderr (always visible to orchestrator)
+    if status["comparison"] == "equal":
+        msg = f"✓ moco up to date (v{status['local_version']})"
+    elif status["comparison"] == "remote_newer":
+        msg = (
+            f"⚠ moco update available: local v{status['local_version']} → "
+            f"remote v{status['latest_version']}. "
+            f"See https://github.com/MoneyMoneyGo/moco-skill/blob/main/CHANGELOG.md"
+        )
+    elif status["comparison"] == "local_newer":
+        msg = (
+            f"ℹ moco local v{status['local_version']} is newer than remote "
+            f"v{status['latest_version']} (unreleased work?). Continuing."
+        )
+    else:
+        msg = (
+            f"⚠ moco update check failed: {status['error']}. "
+            f"Local v{status['local_version']}. Continuing offline."
+        )
+    sys.stderr.write(msg + "\n")
+
+    if _ARGS.update_check_only:
+        code = {
+            "equal":        0,
+            "remote_newer": 10,
+            "local_newer":  0,
+            "unknown":      11,
+        }[status["comparison"]]
+        sys.exit(code)
+
+
+_run_update_check_and_maybe_exit()
+# ---------------------------------------------------------------------------
 
 TEMPLATE_PATH = str(Path(_ARGS.template) if _ARGS.template else _SKILL_ROOT / "assets" / "compare-template.html")
 MD2HTML = str(Path(_ARGS.md2html) if _ARGS.md2html else _SCRIPT_DIR / "md2html.py")
