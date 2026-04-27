@@ -1074,7 +1074,9 @@ def _build_debate_records():
 def _render_debate_stat_inline(record):
     """渲染一段"战绩信息条" — 用于主卡辩论面板 header 和副卡战绩条共享同一信息。
 
-    输出结构：[ N 次挑战 · 后缀文案 ] [ ●●● 颜色格子条 ]
+    输出结构：[ 被挑战 N 次 · 后缀文案 ] [ ●●● 颜色格子条 ]
+    （v2026.04.27.7 起改用"被挑战 N 次"避免歧义——主语是"这个观点"，
+     不是"这家模型主动挑战别人 N 次"。）
     与 _render_debate_record_strip 的差别仅在外层 wrapper 类名：
       - 副卡战绩用：.card-debate-record（已有 CSS）
       - 主卡 header 用：.debate-panel-stat（新加 CSS，与 header 横排居右）
@@ -1107,7 +1109,7 @@ def _render_debate_stat_inline(record):
 
         text_html = (
             f'<span class="card-record-text">'
-            f'{challenged} 次挑战 · '
+            f'被挑战 {challenged} 次 · '
             f'<span class="card-record-upheld suffix-neutral">{suffix}</span>'
             f'</span>'
         )
@@ -1134,13 +1136,13 @@ def _render_debate_record_strip(model_name, record):
         · 灰 fill-tie  = 打和（双方各执一词）
       文字后缀只做聚合陈述（不重复用字重强调结果，强调由格子颜色承担）。
 
-    文案（术语统一为"挑战"，不再用"质疑"）：
+    文案（术语统一为"被挑战"，主语 = 这个观点；v2026.04.27.7 改）：
     - 未被挑战 ✌️
-    - N 次挑战 · 全部扛住         （upheld=0 且 draws=0）
-    - N 次挑战 · 全部成立         （upheld=N）
-    - N 次挑战 · 全部打和         （draws=N）
-    - N 次挑战 · M 次成立         （混合：成立为主，可能掺打和/扛住）
-    - N 次挑战 · M 次打和         （混合：有打和但没成立）
+    - 被挑战 N 次 · 全部扛住         （upheld=0 且 draws=0）
+    - 被挑战 N 次 · 全部成立         （upheld=N）
+    - 被挑战 N 次 · 全部打和         （draws=N）
+    - 被挑战 N 次 · M 次成立         （混合：成立为主，可能掺打和/扛住）
+    - 被挑战 N 次 · M 次打和         （混合：有打和但没成立）
 
     格子：每场一格（封顶 3 格，超出仅显示前 3 格——颜色仍按真实顺序）
     """
