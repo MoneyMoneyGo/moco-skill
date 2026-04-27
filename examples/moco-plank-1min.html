@@ -1,0 +1,2527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoCompare</title>
+<style>
+  :root {
+    /* ===== 基础调色板（11 个，语义色保留） ===== */
+    --bg: #f5f5f4;
+    --surface: #ffffff;
+    --surface-muted: #f7f7f6;    /* code/pre/table-header 共用次要面 */
+    --border: #e5e5e3;
+    --border-strong: #d4d4d2;
+    --text: #1c1c1c;
+    --text-dim: #787874;
+    --text-light: #a0a09c;
+    --accent: #2563eb;
+    --gold: #b45309;
+    --challenge-red: #dc2626;
+    --rebuttal-green: #16a34a;
+
+    /* ===== 派生色：每个色族只留 bg + border 两档 ===== */
+    --accent-bg-hover: rgba(37, 99, 235, 0.06);
+    --accent-border-hover: rgba(37, 99, 235, 0.32);
+    --gold-bg: rgba(180, 83, 9, 0.06);
+    --gold-border: rgba(180, 83, 9, 0.32);
+    --challenge-red-bg: rgba(220, 38, 38, 0.04);
+    --challenge-red-border: rgba(220, 38, 38, 0.15);
+    --rebuttal-green-bg: rgba(22, 163, 74, 0.04);
+    --rebuttal-green-border: rgba(22, 163, 74, 0.15);
+
+    /* ===== 中性遮罩 2 档：弱 hover / 强 hover ===== */
+    --hover-bg: rgba(0, 0, 0, 0.03);          /* 通用 hover/quote 底 */
+    --hover-bg-strong: rgba(0, 0, 0, 0.05);   /* mode-switch active / 强 hover */
+
+    /* ===== Typography ===== */
+    --font: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
+    --mono: "SF Mono", "Fira Code", "Consolas", monospace;
+
+    /* ===== 字号 6 档（按信息角色命名） ===== */
+    --text-micro: 0.7rem;        /* 标签/badge */
+    --text-meta: 0.78rem;        /* meta 信息行 */
+    --text-body: 0.88rem;        /* 主正文（合并原 body 0.86 + emphasis 0.9） */
+    --text-strong: 1rem;         /* 强调段：model-name、winner-text */
+    --text-heading: 1.12rem;     /* 卡内标题（合并原 heading-s 1.08 + heading-m 1.16） */
+    --text-question: 1.3rem;     /* hero question 主标题 */
+
+    /* ===== 间距 6 档 ===== */
+    --gap-tight: 4px;            /* 行内紧密 */
+    --gap-inline: 8px;           /* 行内常规 */
+    --gap-block-s: 12px;         /* 块级紧凑 */
+    --gap-block-m: 18px;         /* 卡片内边距/节内主间距 */
+    --gap-section: 24px;         /* 节边界/卡间距/winner↔grid */
+    --gap-canvas: 40px;          /* 画布级（body/footer/debate items 底 padding） */
+
+    /* ===== 圆角 2 档 ===== */
+    --radius: 10px;              /* 通用：卡/块/按钮/面板/容器 */
+    --radius-pill: 999px;        /* 胶囊：winner-pill、mode-switch */
+
+    /* ===== 阴影 2 档 ===== */
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.03);            /* 默认卡 */
+    --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.06);     /* 卡 hover / winner-banner 共用 */
+
+    /* ===== 行高 5 档（按文字密度命名，归并了原 1.35/1.55/1.9 等飘忽值） ===== */
+    --lh-flat: 1;                /* 图标/胶囊/单行控件：不换行，文字紧贴框 */
+    --lh-tight: 1.4;             /* 紧凑：标题、小字 meta、引语 */
+    --lh-normal: 1.6;            /* 常规正文（偏紧） */
+    --lh-loose: 1.75;            /* 宽松正文（辩论模块主力：红蓝/裁判正文） */
+    --lh-body: 1.85;             /* body 全局基准：通用段落阅读态 */
+
+    /* ===== 动画 1 档（统一 220ms + Material standard 缓动，全站微交互/结构动画通用） ===== */
+    --motion-dur: 220ms;
+    --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ===== 字距 4 档（归并了原 9 种飘忽值，按字号+大小写语义分档） ===== */
+    --ls-text: 0.01em;           /* 正文/大字标题收紧：body、question、roster-item、card-record、model-name、btn-ghost、h1~h4、verdict-score */
+    --ls-tag: 0.04em;            /* 中字距·badge/切换/小节标题：debate-badge、mode-switch-btn、recommended-tag、panel-header、card-summary-title */
+    --ls-wide: 0.08em;           /* 大字距·胶囊：winner-pill */
+    --ls-widest: 0.14em;         /* 超大字距·全大写微型标签：header-label、roster-title */
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: var(--lh-body);
+    min-height: 100vh;
+    padding: var(--gap-canvas) var(--gap-section);
+    letter-spacing: var(--ls-text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== HERO (header + question + roster as one unit) ===== */
+  .hero {
+    max-width: 880px;
+    margin: 0 auto var(--gap-section);
+    padding: var(--gap-block-s) var(--gap-block-m) var(--gap-block-m);
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    text-align: center;
+  }
+
+  .header-label {
+    font-size: var(--text-micro);
+    color: var(--text-light);
+    margin-bottom: var(--gap-block-s);
+    letter-spacing: var(--ls-widest);
+    text-transform: uppercase;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--gap-inline));
+    flex-wrap: wrap;
+  }
+
+  .debate-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gap-tight);
+    font-size: var(--text-micro);
+    font-weight: 600;
+    color: var(--challenge-red);
+    background: var(--challenge-red-bg);
+    padding: 0.2em 0.65em;
+    border-radius: var(--radius);
+    border: 1px solid var(--challenge-red-border);
+    margin-left: 0;
+    letter-spacing: var(--ls-tag);
+    vertical-align: middle;
+  }
+
+  /* ===== MODE SWITCH (segmented control) ===== */
+  .mode-switch {
+    display: inline-flex;
+    align-items: center;
+    background: var(--hover-bg);
+    border-radius: var(--radius);
+    padding: 2px;
+    margin-left: 0;
+    gap: 0;
+  }
+
+  .mode-switch-btn {
+    appearance: none;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: var(--text-micro);
+    font-weight: 600;
+    letter-spacing: var(--ls-tag);
+    color: var(--text-light);
+    padding: 0.5em 1em;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all var(--motion-dur) var(--motion-ease);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    line-height: var(--lh-flat);
+  }
+
+  .mode-switch-btn:hover {
+    color: var(--text);
+  }
+
+  .mode-switch-btn.active {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 0 var(--hover-bg);
+  }
+
+  .mode-switch-btn[data-mode="debate"].active {
+    color: var(--challenge-red);
+  }
+
+  .mode-switch-btn[data-mode="compare"].active {
+    color: var(--accent);
+  }
+
+  /* ===== HERO SUMMARY 容器（winner-banner + debate-summary 的外层）=====
+     银纸设计（2026-04-25 Round 6）：父容器本身不做任何动画。
+     
+     层级模型（银纸亲自定的）：
+     - .hero-summary：父容器，静态 block，只负责语义分组和对外间距（margin-bottom 32px）
+     - .winner-banner：子1，静止不动，不在任何动画容器里，浏览器根本不需要重绘它
+     - .hero-summary-debate-slot：子2，**自己是单行 grid 折叠容器**
+         折叠时高度从内容高→0，margin-top 从 12px→0
+         这个高度变化 = 父容器 .hero-summary 的高度变化 = 向下推挤 .grid 答案区
+     
+     为什么 winner-banner 不会被逐帧渲染：
+     它是 .hero-summary 的普通 block 子项，.hero-summary 自身没有 transition。
+     真正做动画的是 .hero-summary-debate-slot（grid-template-rows 和 margin-top）。
+     slot 的高度变化通过正常文档流"推挤"下方元素，winner-banner 在它上方，
+     位置由流式布局定死，不参与任何动画计算。这就是银纸说的"子容器没有发生
+     任何变化，不被逐帧渲染"。 */
+  .hero-summary {
+    max-width: 1440px;
+    margin: 0 auto var(--gap-section);
+    /* 普通 block 流式布局，自身不做任何 transition */
+  }
+  /* debate 槽：单行 grid 折叠容器
+     - 展开态：grid-template-rows: 1fr + margin-top: 12px
+     - 收起态：grid-template-rows: 0fr + margin-top: 0
+     - fr↔fr 插值干净（单行 grid 没有 auto 行陷阱） */
+  /* 折叠槽：用 grid-template-rows minmax(0, 1fr) ↔ minmax(0, 0fr) 做高度过渡。
+     关键约束：
+     1. minmax(0, ...) 必须显式写——纯 1fr/0fr 在内容驱动高度的容器里 fr 算不出来，
+        浏览器会 fallback 到 auto，导致 0fr 不收缩（这就是 6 轮 38px 不掉的根因）。
+     2. slot 自己 overflow: hidden，否则子元素溢出可见仍占视觉位。
+     3. 子元素 min-height: 0，避免 auto 下限挡住。 */
+  .hero-summary-debate-slot {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    margin-top: var(--gap-block-s);
+    overflow: hidden;
+    /* 用 --dur-mode + --ease-mode：与 .debate-summary / .debate-panel 的 opacity 共享时长和缓动，
+       所有动画同时开始同时结束，消除尾部"答案区单独蠕动"的卡顿感。 */
+    transition: grid-template-rows var(--motion-dur) var(--motion-ease),
+                margin-top         var(--motion-dur) var(--motion-ease);
+  }
+  body.mode-compare .hero-summary-debate-slot {
+    grid-template-rows: minmax(0, 0fr);
+    margin-top: 0;
+  }
+  .hero-summary-debate-slot > * {
+    min-height: 0;
+  }
+
+  /* ===== COMPARE / DEBATE MODE 切换（子块的 opacity）=====
+     debate-summary 子块本身四条边全锚定——尺寸、margin 不动。
+     只切 opacity + visibility，视觉上"原地淡入淡出"，容器的 grid 收缩负责推挤下方。
+
+     注：visibility 那行的 `0s linear <delay>` 不是动画 token 的另一种变体，
+     是 CSS 切 visibility 的标准模式——visibility 必须瞬切（0s）、必须 linear（瞬切下曲线无意义），
+     delay 用来对齐 opacity 收尾：进入时 0ms 立刻可见，退出时 var(--motion-dur) 后再 hidden，
+     避免 opacity 还没淡完就被 visibility 一刀切掉。这是 CSS 通用约束，不属于设计 token 体系。 */
+  .debate-summary {
+    transition:
+      opacity    var(--motion-dur) var(--motion-ease),
+      visibility 0s    linear 0ms;
+  }
+  body.mode-compare .debate-summary {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity    var(--motion-dur) var(--motion-ease),
+      visibility 0s    linear var(--motion-dur);
+  }
+
+  /* winner-reason 双段：compare 模式只显示答案质量评价，debate 模式只显示带辩论维度的完整版。
+     用 display: none 直接切换即可——没有高度过渡需求（外层 .winner-banner 高度本来就是内容驱动）。
+     原则：辩论是辅助，答案质量是主线。两段文案都必须以"答案质量"领起，debate 段在末尾追加辩论表现。 */
+  .winner-reason-debate { display: none; }
+  body.mode-debate .winner-reason-compare { display: none; }
+  body.mode-debate .winner-reason-debate { display: inline; }
+
+  /* debate-panel（每张卡里的挑战/反驳展开区）在 compare 模式必须 display:none。
+     不能用 opacity + visibility 隐藏——那两个属性不释放占位，会让主卡折叠态
+     出现"展开按钮下方一大片白"（section 锁到 sidebar 高 + 看不见的 debate-panel
+     仍占自然高度 = 主卡总高远超 sidebar）。
+     代价：失去内部渐隐动画，但整张卡换模式时本来就在动，感知不到。 */
+  body.mode-compare .debate-panel {
+    display: none;
+  }
+
+  .question {
+    font-size: var(--text-question);
+    font-weight: 600;
+    line-height: var(--lh-normal);
+    color: var(--text);
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    display: block;
+    max-width: 720px;
+    margin: 0 auto;
+    letter-spacing: var(--ls-text);
+  }
+
+  /* Hero divider */
+  .hero-divider {
+    height: 1px;
+    background: var(--border);
+    margin: var(--gap-block-m) auto var(--gap-block-s);
+    max-width: 160px;
+    opacity: 0.6;
+  }
+
+  /* ===== ROSTER BAR (now inside hero) ===== */
+  .roster-section {
+    margin: 0;
+    text-align: center;
+  }
+
+  .roster-title {
+    font-size: var(--text-micro);
+    font-weight: 500;
+    color: var(--text-light);
+    letter-spacing: var(--ls-widest);
+    text-transform: uppercase;
+    margin-bottom: var(--gap-inline);
+  }
+
+  .roster {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--gap-block-m);
+    row-gap: var(--gap-inline);
+  }
+
+  .roster-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gap-tight);
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    font-size: var(--text-meta);
+    font-weight: 500;
+    letter-spacing: var(--ls-text);
+    color: var(--text);
+  }
+
+  /* 身份点（模型身份色）统一 token：花名册 / 主卡卡头共用同一尺寸，
+     保证"同形状 = 同语义 = 同尺寸"。不同字号语境下视觉权重由父容器字号决定，
+     不由点本身调节。 */
+  .roster-dot,
+  .model-badge {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ===== WINNER BANNER =====
+     注意：max-width 和 margin 由外层 .hero-summary 容器统一管，子块自己不设。
+     
+     它是 .hero-summary（静态 block 容器）的普通子项，不在任何动画容器里。
+     动画由 .hero-summary-debate-slot 自己做，winner-banner 完全不参与，
+     浏览器不会对它做任何逐帧重算——这正是银纸说的"子容器没变就不该逐帧渲染"。 */
+  .winner-banner {
+    padding: var(--gap-block-m) var(--gap-section);
+    background: var(--gold-bg);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    gap: calc(var(--gap-inline));
+  }
+
+  .winner-icon { font-size: var(--text-heading); flex-shrink: 0; }
+
+  .winner-text {
+    font-size: var(--text-body);
+    line-height: var(--lh-normal);
+    color: var(--text-dim);
+  }
+
+  .winner-model-name {
+    font-weight: 700;
+    color: var(--gold);
+  }
+
+  /* ===== DEBATE SUMMARY STRIP =====
+     Same shape & rhythm as winner-banner, but de-emphasized
+     (transparent bg, dashed border, neutral text).
+     注意：max-width 和 margin 由外层 .hero-summary 容器统一管，子块自己不设。 */
+  .debate-summary {
+    padding: var(--gap-block-m) var(--gap-section);
+    background: transparent;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    gap: calc(var(--gap-inline));
+  }
+
+  .debate-summary-icon { font-size: var(--text-heading); flex-shrink: 0; }
+
+  .debate-summary-text {
+    font-size: var(--text-body);
+    line-height: var(--lh-normal);
+    color: var(--text-dim);
+  }
+
+  .debate-summary-text strong { color: var(--text); font-weight: 700; }
+
+  /* ===== GRID — hero + sidebar layout ===== */
+  .grid {
+    display: flex;
+    gap: var(--gap-block-s);
+    max-width: 1440px;
+    margin: 0 auto;
+    /* flex-start: sidebar 按 3 张副卡自然高度堆叠，主卡通过 JS 测出 sidebar 高度后
+       赋值 height = sidebar 高度（折叠态），点"展开回答"才解除高度限制。
+       不再用 stretch——stretch 会让"主卡内容更长"反向把 sidebar 拉高，
+       导致 sidebar 底部出现大白。 */
+    align-items: flex-start;
+  }
+
+  /* Hero card (主卡位) — fills main column, no width cap.
+     注意：选择器只看是否 .collapsed，不看 .recommended——
+     "在主卡位" 是布局状态，"是推荐回答" 是数据状态，两者解耦。
+     被切到次卡的推荐卡 .recommended 还在（仍有金边），
+     当前主卡位的卡可能根本就不是推荐。 */
+  .card:not(.collapsed) {
+    flex: 1.65;
+    min-width: 0;
+    /* overflow:hidden 配合 JS 设的 maxHeight，让超出部分被截断（让 mask 渐隐生效）。
+       展开后 JS 会把 maxHeight 设为 'none'，此时 overflow:hidden 也无影响。 */
+    overflow: hidden;
+  }
+
+  /* Sidebar wrapper for collapsed cards */
+  .sidebar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-block-s);
+    min-width: 240px;
+    max-width: 360px;
+  }
+
+  .card.collapsed .card-summary-wrap {
+    /* 盒子边距属于盒子本身：summary-wrap 上下都用 --gap-block-m (18px)，
+       与主卡 card-body 的内边距对齐，让"header→正文起始→卡底"节奏统一。
+       不依赖下方 debate-record 来"接力补底"——盒子边距和内容续接是两件事，
+       后者 36px 的视觉间距是 summary 底 18 + record 顶 18 的自然叠加。 */
+    padding: var(--gap-block-m);
+  }
+
+  .card.collapsed .card-summary-text {
+    font-size: var(--text-meta);
+    line-height: var(--lh-normal);
+  }
+
+  /* Collapsed card header: SAME padding & border as hero, only interaction differs */
+
+  /* ===== CARD ===== */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow var(--motion-dur) var(--motion-ease);
+  }
+
+  .card:hover { box-shadow: var(--shadow-card-hover); }
+  .card.recommended {
+    border-color: var(--gold-border);
+    box-shadow: 0 2px 10px var(--accent-bg-hover);
+  }
+  .card.recommended::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  /* Collapsed card — only show summary */
+  /* card-body 在折叠态完全隐藏：它的内容（card-full）已 display:none，
+     但 card-body 自身有 padding+flex:1，会在 stretch 布局下吞掉剩余高度，
+     渲染成 debate-record/summary-wrap 下方一大块"无主白"。整体藏掉，
+     卡的总高就回到内容自然高度。主卡（:not(.collapsed)）不受影响。 */
+  .card.collapsed .card-body { display: none; }
+  .card.collapsed .card-full { display: none; }
+  .card.collapsed .card-summary-wrap { display: block; }
+  .card:not(.collapsed) .card-summary-wrap { display: none !important; }
+
+  /* --- Sidebar 观点战绩条 (L2 信息密度) ---
+     显示规则：
+       - 默认隐藏（compare 模式 / 主卡 / 未进入 debate 模式）
+       - debate 模式 + 副卡折叠态：显示
+
+     视角：主语是"这个观点"，不是"这个模型"。只统计观点被挑战几次、其中
+     几次挑战成立。模型主动出去挑战别人不计入自己副卡。
+
+     形态：一行「N 次挑战 · M 次成立」+ 右侧格子条
+       - 每格 = 一次挑战，按裁判结果染色：
+         · 红 (challenge-red)  = 挑战成立（观点被攻破）
+         · 绿 (rebuttal-green) = 挑战被扛住（观点站住了）
+         · 灰 (text-light)     = 双方打和（各执一词）
+       - 未被挑战 → 不画条，文字标绿（"非常好"的信号）
+
+     视觉划分：不用分隔线，用各自的 padding 自然分段（summary 底 18 + record 顶 18 = 36px 间距）*/
+  .card-debate-record {
+    display: none;
+    /* 盒子边距属于盒子本身：上下都用 --gap-block-m (18px)，与 summary-wrap 一致。
+       与上方 summary-wrap 的视觉间距由两者各自的 padding 自然叠加产生，
+       而不是靠这里的 padding-top 单方面补偿。 */
+    padding: var(--gap-block-m);
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+  body.mode-debate .card.collapsed .card-debate-record { display: flex; }
+  body.compare-mode .card-debate-record { display: none !important; }
+
+  .card-record-text {
+    font-size: var(--text-meta);
+    color: var(--text-dim);
+    line-height: var(--lh-tight);
+    letter-spacing: var(--ls-text);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* 后缀字体不再加粗：结果强调由「右侧格子条颜色」承担，文字只负责陈述。
+     避免在 12-13px meta 字号里 400/600 的字重对比看起来像"印刷脏污"而非有效信号。 */
+  /* 色彩语义：
+     - 文字一律灰：情绪信号由 ✌🏻 emoji 单独承担（emoji 自带色彩，再给文字标绿就是双重强调，
+       反而让"未被挑战"在视觉上比真有战绩的格子条还抢，本末倒置）
+     - 结果细节交给右侧格子条用色（红=成立、绿=扛住、灰=打和）*/
+  .card-record-upheld.suffix-strong-hold,
+  .card-record-upheld.suffix-neutral { color: var(--text-dim); }
+
+  /* 格子条：每格 = 一次挑战，按裁判结果染色（红=成立、绿=扛住、灰=打和）*/
+  .card-record-bar {
+    display: inline-flex;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .card-record-bar-cell {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--border-strong);  /* 默认态：比 --border 深一点，可见 */
+    transition: background var(--motion-dur) var(--motion-ease);
+  }
+  .card-record-bar-cell.fill-lose { background: var(--challenge-red); }   /* 挑战成立：观点被攻破 */
+  .card-record-bar-cell.fill-win  { background: var(--rebuttal-green); }  /* 挑战被扛住：观点站住 */
+  .card-record-bar-cell.fill-tie  { background: var(--text-light); }      /* 打和：双方各执一词 */
+
+  .card-header {
+    padding: var(--gap-block-m) var(--gap-block-m);
+    display: flex;
+    align-items: center;   /* outer: vertical center between left/right groups */
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    min-width: 0;
+    min-height: 52px;       /* ensure consistent height across hero & collapsed */
+  }
+
+  /* Left group: dot + name + (tag) + word-count → fill, internal gap=4
+     align-items: baseline so model name & word-count share the same baseline */
+  .header-left {
+    display: flex;
+    /* baseline 对齐：让 model-name (0.85rem) 与 word-count (0.72rem) 共享文字基线，
+       避免之前 align-items:center 导致的底线错开。
+       dot/tag 不是文字盒子，在下方分别用 transform/align-self 单独修正到
+       与模型名视觉中心对齐。 */
+    align-items: baseline;
+    gap: 4px;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  /* Right group: 主卡查看 / share-btn → hug */
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+  }
+
+  /* Collapsed card header — no cursor, no expand-hint needed (click body to expand) */
+  .card.collapsed .card-header {
+    cursor: pointer;
+    user-select: none;
+    transition: background var(--motion-dur) var(--motion-ease);
+  }
+
+  .card.collapsed .card-header:hover {
+    background: var(--hover-bg);
+  }
+
+  .card-header .expand-hint {
+    font-size: var(--text-micro);
+    color: var(--accent);
+    font-weight: 500;
+    flex-shrink: 0;
+    opacity: 0.8;
+    transition: opacity var(--motion-dur) var(--motion-ease);
+    white-space: nowrap;
+    display: none; /* hidden by default */
+  }
+
+  /* "主卡查看" 后的细箭头指示符（› 单角引号，比 > 更细更轻） */
+  .card-header .expand-hint::after {
+    content: "›";
+    display: inline-block;
+    margin-left: 4px;
+    font-size: 1.1em;
+    line-height: var(--lh-flat);
+    vertical-align: baseline;
+    transition: transform var(--motion-dur) var(--motion-ease);
+  }
+  .card.collapsed .card-header:hover .expand-hint::after {
+    transform: translateX(2px);
+  }
+
+  /* Only show hint on collapsed (sidebar) cards */
+  .card.collapsed .card-header .expand-hint {
+    display: inline-block;
+  }
+
+  .card.collapsed .card-header:hover .expand-hint {
+    opacity: 1;
+  }
+
+  /* Hero card header: no interaction hint, no cursor */
+  .card:not(.collapsed) .card-header {
+    cursor: default;
+  }
+
+  .model-name {
+    font-weight: 600;
+    font-size: var(--text-body);
+    letter-spacing: var(--ls-text);
+    margin-right: 0;
+    /* Truncate with ellipsis when header is too narrow */
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-break: keep-all;
+    overflow-wrap: normal;
+  }
+
+  .recommended-tag {
+    font-size: var(--text-micro);
+    font-weight: 600;
+    color: var(--gold);
+    background: var(--gold-bg);
+    padding: 2px 0.6em;
+    border-radius: var(--radius);
+    white-space: nowrap;
+    letter-spacing: var(--ls-text);
+    border: 1px solid var(--gold-border);
+    margin-right: 0;
+    flex-shrink: 0;
+    /* baseline 容器里整体居中到模型名视觉中心（不再 stretch 撑满）。 */
+    align-self: center;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    line-height: var(--lh-flat);
+  }
+
+  .word-count {
+    font-size: var(--text-micro);
+    color: var(--text-light);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* word-count now sits inside .header-left, immediately after model-name with gap=4 */
+
+  .header-share-btn {
+    display: none;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    font-size: var(--text-micro);
+    font-weight: 500;
+    color: var(--text-light);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: color var(--motion-dur) var(--motion-ease), border-color var(--motion-dur) var(--motion-ease), background var(--motion-dur) var(--motion-ease);
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-family: inherit;
+  }
+
+  .card:not(.collapsed) .header-share-btn {
+    display: inline-flex;
+  }
+
+  .header-share-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent-border-hover);
+    background: var(--accent-bg-hover);
+  }
+
+  .header-share-btn svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+
+  /* ===== CARD BODY — core reading area ===== */
+  .card-body {
+    padding: var(--gap-block-m);
+    font-size: var(--text-body);
+    line-height: var(--lh-body);
+    flex: 1;
+    overflow-y: auto;
+    max-height: none;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    color: var(--text);
+  }
+
+  /* Summary preview — shown when card is collapsed */
+  .card-summary-wrap {
+    display: none;
+    padding: var(--gap-block-m) var(--gap-block-m);
+  }
+
+  .card-summary-title {
+    font-size: var(--text-micro);
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-tag);
+    margin-bottom: var(--gap-tight);
+  }
+
+  .card-summary-text {
+    font-size: var(--text-body);
+    line-height: var(--lh-loose);
+    color: var(--text-dim);
+  }
+
+  /* Full content wrapper — visible by default, hidden when card is collapsed */
+  .card-full { display: block; }
+
+  /* Hero card (主卡) 折叠态：让 card-body 内部纵向 flex，
+     正文区贴顶、"展开按钮 + debate-panel" 贴底，
+     多余高度变成正文与按钮之间的呼吸感，而非按钮下方的死白。
+     仅作用于主卡：sidebar 副卡折叠态用的是 .card-summary-wrap，不走这条链。 */
+  .card:not(.collapsed) .card-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .card:not(.collapsed) .card-body > .card-full {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+  /* answer-section 高度由 syncHeroToSidebar 通过 inline min/max-height 注入
+     （锚定：full-answer 底 = sidebar 底）。自己不抢 card-full 空间，
+     让兄弟 .debate-panel 在下方按自然高度延伸，主卡总高 = sidebar + debate。 */
+  .card:not(.collapsed) .card-full > .answer-section {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+  }
+  /* 主卡 .answer-content（condensed 摘要）始终隐藏：直接拿 full-answer 渲染。 */
+  .card:not(.collapsed) .card-full > .answer-section > .answer-content {
+    display: none;
+  }
+  /* 折叠态：full-answer 用 flex:1 吃满被 JS 锁死的 section 高度，
+     overflow:hidden 截断，底部 48px mask 渐隐提示"下面还有"。 */
+  .card:not(.collapsed) .answer-section.is-collapsed > .full-answer {
+    display: block;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent 100%);
+            mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent 100%);
+  }
+  /* 展开态：full-answer 自然高度，无遮罩、无顶部 divider，
+     首行紧贴主卡 header 下方，与右侧次卡 condensed 摘要顶部对齐。
+     关键：加 flex:1 + min-height:0 让主卡（展开态）至少撑到 sidebar 高度，
+     避免主卡内容短时下方大白；内容更长时自然撑高父容器。 */
+  .card:not(.collapsed) .answer-section:not(.is-collapsed) > .full-answer {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    -webkit-mask-image: none;
+            mask-image: none;
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+  }
+  /* full-answer 首个子元素去掉自带的 margin-top，避免再次拉开间距 */
+  .card:not(.collapsed) .answer-section:not(.is-collapsed) > .full-answer > *:first-child {
+    margin-top: 0;
+  }
+
+  /* ===== ANSWER SECTION — condensed (default) + full (expandable) ===== */
+  .answer-section {
+    position: relative;
+  }
+
+  /* Concept diagram — always visible at top */
+  .concept-diagram {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+    margin-bottom: var(--gap-block-s);
+    display: block;
+  }
+
+  /* Condensed answer text — default view */
+  .condensed-answer {
+    font-size: var(--text-body);
+    line-height: var(--lh-loose);
+    color: var(--text-dim);
+  }
+
+  .condensed-answer p { margin-bottom: var(--gap-block-s); }
+
+  /* Full original answer — hidden until expanded */
+  .full-answer {
+    border-top: 1px dashed var(--border);
+    padding-top: var(--gap-block-s);
+    margin-top: var(--gap-inline);
+    /* 正文基准：字号/行高/字色/字距全用 moco token，和卡片其他区块同一套语言 */
+    font-size: var(--text-body);
+    line-height: var(--lh-body);
+    color: var(--text);
+    letter-spacing: var(--ls-text);
+  }
+
+  /* ===== .full-answer 正文元素全面 token 化 =====
+     原则：不改原始 Markdown 结构 / md2html 输出的 HTML 标签，
+     只用 CSS 把默认浏览器样式替换成 moco 已有的设计 token，
+     让模型正文与卡片外壳（字号、灰度、间距、边框、圆角）是同一套语言。 */
+
+  /* 段落：段间距用 block-s，继承基准字号/行高/色 */
+  .full-answer p {
+    margin: 0 0 var(--gap-block-s);
+  }
+  .full-answer > *:first-child { margin-top: 0; }
+  .full-answer > *:last-child  { margin-bottom: 0; }
+
+  /* 标题：卡内标题字号 token，紧凑 lh；上多下少，避免段组间距突兀 */
+  .full-answer h1,
+  .full-answer h2,
+  .full-answer h3,
+  .full-answer h4,
+  .full-answer h5,
+  .full-answer h6 {
+    color: var(--text);
+    line-height: var(--lh-tight);
+    letter-spacing: var(--ls-text);
+    font-weight: 600;
+    margin: var(--gap-block-m) 0 var(--gap-block-s);
+  }
+  .full-answer h1 { font-size: var(--text-strong); }          /* 1rem，避免和主卡 question 抢 */
+  .full-answer h2 { font-size: var(--text-heading); }         /* 1.12rem，卡内主小节 */
+  .full-answer h3,
+  .full-answer h4,
+  .full-answer h5,
+  .full-answer h6 {
+    font-size: var(--text-body);
+    color: var(--text-dim);
+    letter-spacing: var(--ls-tag);
+    text-transform: none;
+  }
+
+  /* 列表：bullet 尺寸、缩进、项间距都用 token，避免浏览器默认 40px 缩进 */
+  .full-answer ul,
+  .full-answer ol {
+    margin: 0 0 var(--gap-block-s);
+    padding-left: 1.4em;
+  }
+  .full-answer li {
+    margin-bottom: var(--gap-tight);
+  }
+  .full-answer li > p { margin: 0; }           /* 列表项里再套段落不再叠加间距 */
+  .full-answer li:last-child { margin-bottom: 0; }
+  .full-answer ul ul,
+  .full-answer ol ol,
+  .full-answer ul ol,
+  .full-answer ol ul {
+    margin: var(--gap-tight) 0 0;              /* 嵌套列表紧跟父项 */
+  }
+
+  /* 强调：strong / em 只加 weight/italic，颜色沿用 var(--text)，不引入新色 */
+  .full-answer strong { font-weight: 600; color: var(--text); }
+  .full-answer em     { font-style: italic; }
+
+  /* 链接：accent 蓝 + hover 下划线，和卡片其他可点元素语言一致 */
+  .full-answer a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color var(--motion-dur) var(--motion-ease);
+  }
+  .full-answer a:hover { border-bottom-color: var(--accent-border-hover); }
+
+  /* 行内代码：mono + surface-muted 底 + border，和 pre 同体系 */
+  .full-answer code {
+    font-family: var(--mono);
+    font-size: 0.92em;
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: var(--text);
+  }
+
+  /* 代码块：独立卡面，圆角/边框/内边距/行高全 token；code 去除行内样式以免叠加 */
+  .full-answer pre {
+    margin: 0 0 var(--gap-block-s);
+    padding: var(--gap-block-s) var(--gap-block-m);
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow-x: auto;
+    line-height: var(--lh-normal);
+  }
+  .full-answer pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: var(--text-meta);
+    color: var(--text);
+  }
+
+  /* 引用：左细 accent 线 + 暗文字 + hover-bg 底，和卡片其他次要信息同语言 */
+  .full-answer blockquote {
+    margin: 0 0 var(--gap-block-s);
+    padding: var(--gap-tight) var(--gap-block-m);
+    border-left: 2px solid var(--border-strong);
+    background: var(--hover-bg);
+    color: var(--text-dim);
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .full-answer blockquote > p:last-child { margin-bottom: 0; }
+
+  /* 分隔线：复用 border token；浏览器默认 inset 风格换掉 */
+  .full-answer hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: var(--gap-block-m) 0;
+  }
+
+  /* 图片：圆角 + 边界线，防止大图顶破卡片 */
+  .full-answer img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    display: block;
+    margin: var(--gap-block-s) 0;
+  }
+
+  /* 表格：实际频次最高（90 td），浏览器默认最丑。
+     套卡面：surface 底 + border-collapse + header 用 surface-muted 区分。
+     宽度 100%，字号降到 meta，避免挤破列宽。 */
+  .full-answer table {
+    width: 100%;
+    margin: 0 0 var(--gap-block-s);
+    border-collapse: collapse;
+    font-size: var(--text-meta);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;                          /* 圆角对 border-collapse 生效的关键 */
+    line-height: var(--lh-tight);
+  }
+  .full-answer th,
+  .full-answer td {
+    padding: var(--gap-tight) var(--gap-inline);
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .full-answer th {
+    background: var(--surface-muted);
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: var(--ls-tag);
+    white-space: nowrap;
+  }
+  .full-answer tr:last-child td { border-bottom: 0; }
+  .full-answer td { color: var(--text-dim); }   /* 数据格比表头稍淡，减轻长表格压迫感 */
+
+  /* Math：.math-inline / .math-block（md2html 吐的壳）简单对齐一下字体 */
+  .full-answer .math-inline,
+  .full-answer .math-block {
+    font-family: var(--mono);
+    color: var(--text);
+  }
+  .full-answer .math-block {
+    display: block;
+    padding: var(--gap-block-s) var(--gap-block-m);
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin: 0 0 var(--gap-block-s);
+    overflow-x: auto;
+  }
+
+  /* ===== END .full-answer token 化 ===== */
+
+  /* ========= 按钮基类 .btn-ghost =========
+     尺寸/字号/边框/交互一次定义，toggle 和 share 共享。
+     任何加入 action-row 的按钮都自动等高、等padding。 */
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    height: 32px;
+    padding: 0 14px;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: var(--text-meta);
+    font-weight: 500;
+    line-height: var(--lh-flat);
+    letter-spacing: var(--ls-text);
+    color: var(--text-light);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color var(--motion-dur) var(--motion-ease), border-color var(--motion-dur) var(--motion-ease), background var(--motion-dur) var(--motion-ease);
+  }
+  .btn-ghost:hover {
+    color: var(--accent);
+    border-color: var(--accent-border-hover);
+    background: var(--accent-bg-hover);
+  }
+  .btn-ghost svg { width: 12px; height: 12px; flex-shrink: 0; display: block; }
+
+  /* 展开态：action-row 横向一分为二，左"收起回答"+ 右"分享此回答" */
+  .answer-action-row {
+    display: flex;
+    gap: 8px;
+    margin-top: var(--gap-inline);
+  }
+  .answer-action-row .answer-toggle { flex: 1; margin-top: 0; }
+  .answer-action-row .answer-share-btn { flex-shrink: 0; }
+
+  /* share 按钮：折叠态隐藏，只在展开后出现 */
+  .answer-share-btn { display: none; }
+  .answer-section:not(.is-collapsed) .answer-share-btn { display: inline-flex; }
+
+  /* ========= .answer-toggle =========
+     展开/收起按钮 = 分享按钮 = 同一种按钮，逻辑上没有差异。
+     完全继承 .btn-ghost 的 default 和 hover，只额外加一条布局差异：
+     折叠态独占一行（width 100%）；展开态在 action-row 里由 flex:1 接管宽度。
+     不再为"折叠态"做差异化品牌色——折叠/展开/share 三个按钮表现完全一致。 */
+  .answer-toggle {
+    width: 100%;
+  }
+
+  /* .answer-section 折叠态用 .is-collapsed 标记，参见上方 card-full 区块 */
+
+  /* Scrollbar — subtle light style */
+  .card-body::-webkit-scrollbar { width: 4px; }
+  .card-body::-webkit-scrollbar-track { background: transparent; }
+  .card-body::-webkit-scrollbar-thumb { background: #d0d0ce; border-radius: var(--radius); }
+  .card-body::-webkit-scrollbar-thumb:hover { background: #b8b8b6; }
+
+  /* ===== HEADINGS ===== */
+  .card-body h1, .card-body h2, .card-body h3, .card-body h4 {
+    margin-top: var(--gap-block-m);
+    margin-bottom: var(--gap-block-s);
+    font-weight: 650;
+    color: var(--text);
+    line-height: var(--lh-tight);
+    letter-spacing: var(--ls-text);
+  }
+  .card-body h1:first-child,
+  .card-body h2:first-child,
+  .card-body h3:first-child,
+  .card-body h4:first-child { margin-top: 0; }
+  .card-body h1 { font-size: var(--text-heading); }
+  .card-body h2 { font-size: var(--text-heading); }
+  .card-body h3 { font-size: var(--text-strong); }
+  .card-body h4 { font-size: var(--text-body); }
+
+  /* ===== PARAGRAPHS & TEXT ===== */
+  .card-body p {
+    margin-bottom: var(--gap-block-s);
+  }
+
+  /* ===== LISTS ===== */
+  .card-body ul, .card-body ol {
+    margin-bottom: var(--gap-block-s);
+    padding-left: 1.65rem;
+  }
+  .card-body li {
+    margin-bottom: var(--gap-inline);
+    padding-left: var(--gap-tight);
+  }
+  .card-body li::marker { color: var(--text-light); font-size: 0.82em; }
+
+  /* ===== CODE ===== */
+  .card-body code {
+    background: var(--surface-muted);
+    padding: 0.2em 0.5em;
+    border-radius: var(--radius);
+    font-size: 0.84em;
+    font-family: var(--mono);
+    color: var(--text);
+    word-break: break-all;
+  }
+
+  /* ===== CODE BLOCKS ===== */
+  .card-body pre {
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--gap-block-m);
+    overflow-x: auto;
+    margin: var(--gap-block-s) 0;
+    width: 100%;
+  }
+
+  .card-body pre code {
+    background: none;
+    padding: 0;
+    font-size: var(--text-meta);
+    line-height: var(--lh-loose);
+    color: var(--text);
+    word-break: normal;
+  }
+
+  .card-body strong { color: var(--text); font-weight: 650; }
+
+  /* ===== BLOCKQUOTE ===== */
+  .card-body blockquote {
+    border-left: 3px solid var(--border-strong);
+    padding-left: var(--gap-block-s);
+    color: var(--text-dim);
+    margin: var(--gap-block-s) 0;
+    font-style: normal;
+    line-height: var(--lh-loose);
+  }
+
+  /* ===== TABLES — auto-layout FILL behavior ===== */
+  .card-body table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    margin: var(--gap-block-s) 0;
+    font-size: var(--text-body);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .card-body th, .card-body td {
+    padding: var(--gap-block-s) var(--gap-block-s);
+    border: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    line-height: var(--lh-normal);
+  }
+
+  .card-body th {
+    background: var(--surface-muted);
+    font-weight: 600;
+    font-size: var(--text-meta);
+    color: var(--text);
+  }
+
+  .card-body td { color: var(--text); }
+
+  /* ===== IMAGES & MULTIMODAL ===== */
+  .card-body img {
+    max-width: 100%; height: auto;
+    border-radius: var(--radius);
+    margin: var(--gap-block-s) 0;
+  }
+
+  .card-body svg {
+    max-width: 100%; height: auto;
+    border-radius: var(--radius);
+    margin: var(--gap-block-s) 0;
+  }
+
+  /* ===== HORIZONTAL RULE ===== */
+  .card-body hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: var(--gap-block-m) 0;
+  }
+
+  /* ===== MATH ===== */
+  .math-block {
+    background: var(--surface-muted);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    padding: var(--gap-block-s);
+    margin: var(--gap-block-s) 0;
+    font-family: var(--mono);
+    font-style: italic;
+    color: var(--text-dim);
+    text-align: center;
+    overflow-x: auto;
+  }
+
+  /*
+   * ============================================================
+   * DEBATE PANEL — Inter-model challenge & rebuttal UI
+   * ============================================================
+   */
+
+
+  /* .debate-panel 容器自身无样式：与 answer 共享卡片，不要分隔线 */
+
+  .debate-panel-header {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--gap-inline));
+    padding: var(--gap-block-s) var(--gap-block-m);
+    font-size: var(--text-meta);
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: var(--ls-tag);
+    cursor: pointer;
+    user-select: none;
+    transition: background var(--motion-dur) var(--motion-ease);
+    border-bottom: 1px solid transparent;
+  }
+
+  .debate-panel-header:hover {
+    background: var(--hover-bg);
+  }
+
+  .debate-panel-header .icon { font-size: var(--text-body); }
+
+  .debate-count {
+    margin-left: auto;
+    font-size: var(--text-micro);
+    font-weight: 500;
+    color: var(--text-light);
+  }
+
+  /* Debate items (hidden when collapsed) */
+  .debate-items {
+    display: none;
+    padding: 0 var(--gap-block-m) var(--gap-block-m);
+  }
+
+  .debate-panel.open .debate-items {
+    display: block;
+  }
+
+  /* ===================================================================
+     交锋卡 (.debate-item) — 一条挑战 + 对应反驳 + 裁判评分，一一配对
+     两种视图互斥：
+       - 默认预览态：红蓝双栏要点 + 判词摘要（前缀带裁判名） + 「查看完整观点」触发器
+       - 展开态：隐藏预览，显示挑战完整 → 反驳完整 → 裁判完整判词（上下堆叠）
+     ================================================================ */
+  .debate-item {
+    margin-bottom: var(--gap-block-m);
+  }
+
+  .debate-item:last-child { margin-bottom: 0; }
+
+  /* 预览/展开互斥 */
+  .debate-item .debate-clash-preview { display: block; }
+  .debate-item .debate-clash-full { display: none; }
+  .debate-item.expanded .debate-clash-preview { display: none; }
+  .debate-item.expanded .debate-clash-full { display: block; }
+
+  /* --- 预览态：红蓝双栏 --- */
+  .debate-clash-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gap-block-s);
+  }
+
+  @media (max-width: 700px) {
+    .debate-clash-grid { grid-template-columns: 1fr; }
+  }
+
+  .debate-clash-cell {
+    position: relative;
+    border-radius: var(--radius);
+    padding: var(--gap-block-s);
+    /* 左色条承载立场语义（红=挑战 / 蓝=反驳），由 --challenge 变体各自覆盖。
+       其余三边用透明 1px 边框，和卡片体系 radius/间距对齐。 */
+    border: 1px solid transparent;
+    border-left-width: 3px;
+  }
+
+  .debate-clash-cell--challenge {
+    background: var(--challenge-red-bg);
+    border-color: var(--challenge-red-border);
+    border-left-color: var(--challenge-red);
+  }
+
+  .debate-clash-cell--rebuttal {
+    background: var(--accent-bg-hover);
+    border-color: var(--accent-border-hover);
+    border-left-color: var(--accent);
+  }
+
+  .debate-clash-cell-header {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-tight);
+    margin-bottom: var(--gap-inline);
+    font-size: var(--text-meta);
+    font-weight: 700;
+  }
+
+  /* 角色前缀箭头：→ 表示进攻（挑战），↩ 表示回击（反驳）。
+     用 ASCII/几何字符而非 emoji，跨平台渲染稳定；颜色跟随 role 色。 */
+  .debate-clash-icon {
+    font-size: var(--text-meta);
+    flex-shrink: 0;
+    line-height: var(--lh-flat);
+    font-weight: 700;
+  }
+  .debate-clash-cell--challenge .debate-clash-icon { color: var(--challenge-red); }
+  .debate-clash-cell--rebuttal  .debate-clash-icon { color: var(--accent); }
+
+  .debate-clash-cell--challenge .debate-clash-role { color: var(--challenge-red); }
+  .debate-clash-cell--rebuttal  .debate-clash-role { color: var(--accent); }
+
+  /* 预览态红蓝摘要：line-height 1.75，和辩论模块里所有 text-meta 文字统一
+     （裁判摘要 / 展开红蓝 reason / 展开红蓝 body / 裁判正文都是 1.75）。 */
+  .debate-clash-summary {
+    font-size: var(--text-meta);
+    line-height: var(--lh-loose);
+    color: var(--text);
+  }
+
+  /* --- 胜方胶囊「胜」：挂在红/蓝块 header 右侧（替代原"得分 N"位置） ---
+     设计：只有胜方有胶囊，两边都没胶囊 = 平局。不再显示分数，也不再额外写"挑战方胜出"。*/
+  .debate-winner-pill {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 22px;
+    padding: 0 9px;
+    font-size: var(--text-micro);
+    font-weight: 800;
+    border-radius: var(--radius-pill);
+    color: #fff;
+    letter-spacing: var(--ls-wide);
+    text-transform: none;
+    line-height: var(--lh-flat);
+  }
+  .debate-winner-pill--challenge {
+    background: var(--challenge-red);
+  }
+  .debate-winner-pill--rebuttal {
+    background: var(--accent);
+  }
+
+  /* --- 预览态：判词一行（前缀 🎯 裁判 · XX：+ 摘要） ---
+     字号和红蓝 cell 摘要 / 展开态裁判正文对齐（text-meta 13px / lh 1.75）：
+       - 预览态内部：裁判摘要 = 红蓝摘要，同一行内部不分裂
+       - 跨态联动：预览/展开两态的裁判文字字号一致，展开时不出现"字突然变大"的视觉跳变
+     原本用 text-micro 12px 是想让预览整条"更轻"，但裁判是结论方，不该比论点字还小。 */
+  .debate-verdict-preview {
+    margin-top: var(--gap-block-s);
+    padding: var(--gap-inline) var(--gap-block-s);
+    border-radius: var(--radius);
+    background: var(--hover-bg);
+    border: 1px dashed var(--border);
+    font-size: var(--text-meta);
+    line-height: var(--lh-loose);
+  }
+
+  .debate-verdict-prefix {
+    color: var(--text-dim);
+    font-weight: 600;
+    margin-right: var(--gap-tight);
+    white-space: nowrap;
+  }
+  .debate-verdict-prefix strong {
+    color: var(--text);
+    font-weight: 700;
+  }
+  .debate-verdict-prefix-icon {
+    margin-right: var(--gap-tight);
+    line-height: var(--lh-flat);
+  }
+
+  .debate-verdict-summary {
+    color: var(--text-dim);
+  }
+
+  /* --- 展开态：挑战 / 反驳 / 判词，上下堆叠（人类阅读习惯） ---
+     padding 和预览态 .debate-clash-cell 保持一致（四周等宽 gap-block-s），
+     让"同一块内容"在折叠/展开两种形态下边距一致，不出现方正/扁长的视觉跳变。 */
+  .debate-clash-full-block {
+    position: relative;
+    border-radius: var(--radius);
+    padding: var(--gap-block-s);
+    /* 左色条同预览态（红=挑战 / 蓝=反驳），保持视觉连续 */
+    border: 1px solid transparent;
+    border-left-width: 3px;
+    margin-bottom: var(--gap-block-s);
+  }
+
+  .debate-clash-full-block--challenge {
+    background: var(--challenge-red-bg);
+    border-color: var(--challenge-red-border);
+    border-left-color: var(--challenge-red);
+  }
+
+  .debate-clash-full-block--rebuttal {
+    background: var(--accent-bg-hover);
+    border-color: var(--accent-border-hover);
+    border-left-color: var(--accent);
+  }
+
+  .debate-clash-full-header {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-tight);
+    margin-bottom: var(--gap-inline);
+    font-size: var(--text-meta);
+    font-weight: 700;
+  }
+
+  .debate-clash-full-block--challenge .debate-clash-full-header .debate-clash-role { color: var(--challenge-red); }
+  .debate-clash-full-block--rebuttal  .debate-clash-full-header .debate-clash-role { color: var(--accent); }
+  .debate-clash-full-block--challenge .debate-clash-full-header .debate-clash-icon { color: var(--challenge-red); }
+  .debate-clash-full-block--rebuttal  .debate-clash-full-header .debate-clash-icon { color: var(--accent); }
+
+  /* 展开态红蓝块的概要 reason（一行主张）：line-height 和下方 body / 模块其它 text-meta 统一 1.75。 */
+  .debate-clash-full-reason {
+    font-size: var(--text-meta);
+    font-weight: 400;
+    color: var(--text);
+    line-height: var(--lh-loose);
+    margin-bottom: var(--gap-inline);
+    padding-bottom: var(--gap-inline);
+    border-bottom: 1px dashed var(--border);
+  }
+
+  /* 展开态红蓝块的正文：字号/行高和裁判 .debate-verdict-full-body 对齐，
+     因为辩论面板整体属于"次级区"，不应该用 text-body 压过主卡正文。
+     同块内部字号保持一致：reason 和 body 都是 meta。 */
+  .debate-clash-full-body {
+    font-size: var(--text-meta);
+    line-height: var(--lh-loose);
+    color: var(--text);
+  }
+
+  /* --- 展开态：裁判完整判词 ---
+     padding 和红蓝块对齐（四周 gap-block-s），保持"三块一视同仁"。 */
+  .debate-verdict-full {
+    border-radius: var(--radius);
+    padding: var(--gap-block-s);
+    background: var(--hover-bg);
+    border: 1px solid var(--border-strong);
+  }
+
+  .debate-verdict-full-header {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-inline);
+    margin-bottom: var(--gap-inline);
+    font-size: var(--text-meta);
+    font-weight: 700;
+    color: var(--text-dim);
+  }
+  .debate-verdict-full-header strong {
+    color: var(--text);
+  }
+  /* 展开态裁判 header 右侧打分。
+     不做比分牌（胶囊+冒号=体育赛果，和司法判词气质错位）。
+     格式："说服力  挑战方 9 / 反驳方 7"——
+       - 前缀"说服力"点明这是**对辩论内容的打分**，不是次数/动作，消除"挑战了 9 次"的歧义
+       - "挑战方 / 反驳方"（带"方"）语义为名词，不会被误读成动词
+       - 分隔符用 / 而非 ·，明确是并列评分对照
+     胜负已由红/蓝块上的「胜」胶囊表达；这里用降饱和的红蓝只做"快速识别"的语义锚点，不做强调。 */
+  .debate-verdict-score {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--gap-inline);
+    font-size: var(--text-meta);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--ls-text);
+  }
+  .debate-verdict-score-label {
+    color: var(--text-light);
+    font-weight: 500;
+  }
+  .debate-verdict-score-item {
+    white-space: nowrap;
+  }
+  .debate-verdict-score-item--challenge { color: var(--challenge-red); }
+  .debate-verdict-score-item--rebuttal  { color: var(--accent); }
+  .debate-verdict-score-num {
+    font-weight: 700;
+  }
+  .debate-verdict-score-sep {
+    color: var(--text-light);
+    opacity: 0.5;
+  }
+
+  .debate-verdict-full-body {
+    font-size: var(--text-meta);
+    line-height: var(--lh-loose);
+    color: var(--text-dim);
+  }
+
+  /* --- 展开/收起触发器 --- */
+  .debate-expand-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gap-tight);
+    font-size: var(--text-meta);
+    font-weight: 500;
+    color: var(--text-light);
+    cursor: pointer;
+    user-select: none;
+    margin-top: var(--gap-inline);
+    /* 3px 是触发器专属视觉高度微调（让它比普通 8px padding 按钮矮一号，更克制），
+       水平 8px = gap-inline。 */
+    padding: 3px var(--gap-inline);
+    border-radius: var(--radius);
+    transition: background var(--motion-dur) var(--motion-ease), color var(--motion-dur) var(--motion-ease);
+  }
+
+  .debate-expand-trigger:hover {
+    background: var(--hover-bg-strong);
+    color: var(--text-dim);
+  }
+
+  /* No-debate indicator — inline, no clickable header
+     用色与副卡战绩条的"未被挑战"统一：文字灰 + ✌🏻 emoji 承担正向情绪信号
+     （emoji 自带色彩，文字再标绿就是双重强调，反而抢戏） */
+  .no-debate-inline {
+    padding: var(--gap-block-s) var(--gap-block-m);
+    font-size: var(--text-meta);
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    text-align: center;
+    margin-top: var(--gap-canvas);
+    color: #c4c4c0;
+    font-size: var(--text-meta);
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 1080px) {
+    .grid { flex-direction: column; }
+    .card:not(.collapsed) { flex: none; width: 100%; }
+    .sidebar { flex-direction: row; flex-wrap: wrap; max-width: none; }
+    .card.collapsed { flex: 1; min-width: 200px; }
+  }
+  @media (max-width: 720px) {
+    body { padding: var(--gap-section); }
+    .grid { flex-direction: column; }
+    .card:not(.collapsed) { flex: none; width: 100%; }
+    .sidebar { flex-direction: column; max-width: none; }
+    .card.collapsed { width: 100%; }
+    .question { font-size: var(--text-heading); padding: 0; }
+    .hero { padding: var(--gap-block-m); border-radius: var(--radius); }
+    .roster { justify-content: center; }
+    /* Mobile: hero card expanded, others truly collapsed */
+    .card.collapsed .card-summary-wrap { 
+      max-height: 120px; 
+      overflow: hidden; 
+    }
+  }
+
+  /* ===== BACK TO TOP =====
+     位置规范：position: fixed 悬浮在视口；水平右沿对齐 body 内容右沿（= 侧栏右沿）；
+     垂直离视口底 24px。滚过一屏后渐显。
+     right 直接用 body 的水平 padding（var(--gap-section)），无需 JS 计算。 */
+  .back-to-top {
+    position: fixed;
+    right: var(--gap-section);
+    /* 视口固定距离 24px，不再绑 footer 高度——
+       footer 改 padding/margin 时这里也不会错位（解耦） */
+    bottom: var(--gap-section);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text-light);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-card-hover);
+    opacity: 0;
+    transform: translateY(4px);
+    pointer-events: none;
+    transition: opacity var(--motion-dur) var(--motion-ease), transform var(--motion-dur) var(--motion-ease), background var(--motion-dur) var(--motion-ease), border-color var(--motion-dur) var(--motion-ease), color var(--motion-dur) var(--motion-ease);
+    z-index: 50;
+    -webkit-tap-highlight-color: transparent;
+    /* 用 ↑（U+2191）字符，主流字体里都有，比 › 稳定 */
+    font-size: var(--text-question);
+    line-height: var(--lh-flat);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  }
+  .back-to-top-icon {
+    display: inline-block;
+    /* ↑ 字符在大多数字体里 baseline 偏低，flex 居中后视觉偏下，margin-bottom 1px 上推补偿 */
+    margin-bottom: 1px;
+    transition: transform var(--motion-dur) var(--motion-ease);
+  }
+
+  .back-to-top.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .back-to-top:hover {
+    background: var(--accent-bg-hover);
+    border-color: var(--accent-border-hover);
+    color: var(--accent);
+  }
+  .back-to-top:hover .back-to-top-icon {
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 720px) {
+    .back-to-top { right: var(--gap-section); bottom: 12px; width: 36px; height: 36px; font-size: var(--text-strong); }
+  }
+</style>
+
+<!-- MathJax for LaTeX rendering -->
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+// MoCompare Card Swap Logic:
+// - Clicking a SIDEBAR (collapsed) card → promotes it to HERO position
+// - HERO card is NOT interactive
+document.addEventListener('DOMContentLoaded', function() {
+  var grid = document.querySelector('.grid');
+
+  // === Mode switch (Debate / Compare) ===
+  (function initModeSwitch() {
+    var STORAGE_KEY = 'moco-mode';
+    var btns = document.querySelectorAll('.mode-switch-btn');
+    if (!btns.length) return;
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch(e) {}
+    var initial = saved === 'compare' ? 'compare' : 'debate';
+    applyMode(initial);
+    btns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        applyMode(btn.getAttribute('data-mode'));
+      });
+    });
+    function applyMode(mode) {
+      document.body.classList.toggle('mode-compare', mode === 'compare');
+      document.body.classList.toggle('mode-debate', mode === 'debate');
+      btns.forEach(function(b) {
+        var on = b.getAttribute('data-mode') === mode;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      try { localStorage.setItem(STORAGE_KEY, mode); } catch(e) {}
+    }
+  })();
+
+  // === Share button handler (event delegation — works for cards swapped later) ===
+  function showToast(msg) {
+    var t = document.getElementById('moco-toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'moco-toast';
+      // 动态注入 toast：刻意 inline 避免依赖外部 CSS（JS 创建后立即可用）
+      // 用 var() 引用 token，保持与主样式一致
+      t.style.cssText = 'position:fixed;bottom:var(--gap-section);left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:10px 20px;border-radius: var(--radius);font-size:var(--text-meta);font-weight:500;box-shadow:0 4px 24px rgba(0,0,0,0.18);opacity:0;transition:transform var(--motion-dur) var(--motion-ease),opacity var(--motion-dur) var(--motion-ease);z-index:9999;pointer-events:none;white-space:nowrap;';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    // 双 rAF 隔帧：让浏览器先用初始态（opacity:0 + translateY(80px)）渲染一帧，
+    // 下一帧再改终态，transition 才有可插值的起点。
+    // 否则 appendChild + 立即改 style 会被合并成一帧渲染，首次出现没有动画。
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        t.style.transform = 'translateX(-50%) translateY(0)';
+        t.style.opacity = '1';
+      });
+    });
+    clearTimeout(t._hideTimer);
+    t._hideTimer = setTimeout(function() {
+      t.style.transform = 'translateX(-50%) translateY(80px)';
+      t.style.opacity = '0';
+    }, 2500);
+  }
+
+  function copyToClipboard(text, okMsg) {
+    okMsg = okMsg || '已复制 ✓';
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;left:-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); showToast(okMsg); }
+      catch (e) { showToast('复制失败，请手动复制'); }
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() { showToast(okMsg); }).catch(fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  // ========== 分享：收集卡片数据 → 生成 MDX → 复制到剪贴板 ==========
+  // 设计意图：点击「分享此回答」后，把当前卡片的结构化内容打包成 MDX 文本，
+  // 用户粘给 AI，由 AI 调 MCP 追加写入「Moco 档案」腾讯文档。绕开后端存储。
+
+  // HTML → Markdown 轻量转换（只处理 .full-answer 实际出现的标签）
+  function htmlToMarkdown(root) {
+    if (!root) return '';
+    var lines = [];
+    function inline(node) {
+      // 递归把节点转成行内 Markdown 文本
+      if (node.nodeType === 3) return node.nodeValue.replace(/\s+/g, ' ');
+      if (node.nodeType !== 1) return '';
+      var tag = node.tagName.toLowerCase();
+      var inner = Array.prototype.map.call(node.childNodes, inline).join('');
+      if (tag === 'strong' || tag === 'b') return '**' + inner + '**';
+      if (tag === 'em' || tag === 'i') return '*' + inner + '*';
+      if (tag === 'code') return '`' + inner + '`';
+      if (tag === 'a') return '[' + inner + '](' + (node.getAttribute('href') || '') + ')';
+      if (tag === 'br') return '\n';
+      return inner;
+    }
+    function block(node, listPrefix) {
+      if (node.nodeType === 3) {
+        var t = node.nodeValue.trim();
+        if (t) lines.push(t);
+        return;
+      }
+      if (node.nodeType !== 1) return;
+      var tag = node.tagName.toLowerCase();
+      if (/^h[1-6]$/.test(tag)) {
+        var level = parseInt(tag[1], 10);
+        lines.push('\n' + '#'.repeat(level) + ' ' + inline(node).trim() + '\n');
+      } else if (tag === 'p') {
+        lines.push(inline(node).trim());
+        lines.push('');
+      } else if (tag === 'hr') {
+        lines.push('\n---\n');
+      } else if (tag === 'ul' || tag === 'ol') {
+        Array.prototype.forEach.call(node.children, function(li, i) {
+          if (li.tagName.toLowerCase() !== 'li') return;
+          var prefix = tag === 'ol' ? (i + 1) + '. ' : '- ';
+          lines.push(prefix + inline(li).trim());
+        });
+        lines.push('');
+      } else if (tag === 'blockquote') {
+        var inner = [];
+        Array.prototype.forEach.call(node.childNodes, function(c) {
+          if (c.nodeType === 1) inner.push(inline(c).trim());
+          else if (c.nodeType === 3 && c.nodeValue.trim()) inner.push(c.nodeValue.trim());
+        });
+        inner.filter(Boolean).forEach(function(line) { lines.push('> ' + line); });
+        lines.push('');
+      } else if (tag === 'table') {
+        var rows = node.querySelectorAll('tr');
+        if (!rows.length) return;
+        rows.forEach(function(tr, ri) {
+          var cells = tr.querySelectorAll('th,td');
+          var row = Array.prototype.map.call(cells, function(c) { return inline(c).trim().replace(/\|/g, '\\|'); }).join(' | ');
+          lines.push('| ' + row + ' |');
+          if (ri === 0) {
+            lines.push('| ' + Array.prototype.map.call(cells, function() { return '---'; }).join(' | ') + ' |');
+          }
+        });
+        lines.push('');
+      } else if (tag === 'pre') {
+        lines.push('```');
+        lines.push(node.textContent.replace(/\n+$/, ''));
+        lines.push('```');
+        lines.push('');
+      } else {
+        // 兜底：其他容器递归
+        Array.prototype.forEach.call(node.childNodes, function(c) { block(c); });
+      }
+    }
+    Array.prototype.forEach.call(root.childNodes, function(c) { block(c); });
+    // 合并多余空行
+    return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  function collectDebatesFromCard(card) {
+    // 只在 debate mode 下打包：所见即所享——用户在 debate mode 看到辩论区，分享就带上；
+    // compare mode 下辩论区视觉上被隐藏，分享也不应包含。
+    var items = card.querySelectorAll('.debate-panel .debate-item');
+    if (!items || !items.length) return [];
+    return Array.prototype.map.call(items, function(item) {
+      var full = item.querySelector('.debate-clash-full');
+      if (!full) return null;
+      var chBlock = full.querySelector('.debate-clash-full-block--challenge');
+      var rbBlock = full.querySelector('.debate-clash-full-block--rebuttal');
+      var verdictBlock = full.querySelector('.debate-verdict-full');
+
+      // 挑战方名字：header 里 "挑战方 · <strong>名字</strong>"
+      var chNameEl = chBlock && chBlock.querySelector('.debate-clash-role strong');
+      var challenger = chNameEl ? chNameEl.textContent.trim() : '';
+      // 挑战 reason（一句话定性）
+      var chReasonEl = chBlock && chBlock.querySelector('.debate-clash-full-reason');
+      var challengeReason = chReasonEl ? chReasonEl.textContent.trim() : '';
+      // 挑战完整论据
+      var chBodyEl = chBlock && chBlock.querySelector('.debate-clash-full-body');
+      var challengeBody = chBodyEl ? htmlToMarkdown(chBodyEl).trim() : '';
+      // 胜方：看挑战块里有没有胜胶囊（.debate-winner-pill 由 _render_winner_pill 生成）
+      var chWin = !!(chBlock && chBlock.querySelector('.debate-winner-pill'));
+
+      // 反驳完整论据
+      var rbBodyEl = rbBlock && rbBlock.querySelector('.debate-clash-full-body');
+      var rebuttalBody = rbBodyEl ? htmlToMarkdown(rbBodyEl).trim() : '';
+      var rbWin = !!(rbBlock && rbBlock.querySelector('.debate-winner-pill'));
+
+      // 裁判：判词 + 分数
+      var judge = '';
+      var judgeStrong = verdictBlock && verdictBlock.querySelector('.debate-verdict-full-header strong');
+      if (judgeStrong) judge = judgeStrong.textContent.trim();
+      var verdictBodyEl = verdictBlock && verdictBlock.querySelector('.debate-verdict-full-body');
+      var verdict = verdictBodyEl ? htmlToMarkdown(verdictBodyEl).trim() : '';
+      var scoreNums = verdictBlock ? verdictBlock.querySelectorAll('.debate-verdict-score-num') : [];
+      var scoreCh = scoreNums.length >= 1 ? scoreNums[0].textContent.trim() : '';
+      var scoreRb = scoreNums.length >= 2 ? scoreNums[1].textContent.trim() : '';
+
+      var winner = chWin ? 'challenge' : (rbWin ? 'rebuttal' : 'draw');
+      return {
+        challenger: challenger,
+        challengeReason: challengeReason,
+        challengeBody: challengeBody,
+        rebuttalBody: rebuttalBody,
+        judge: judge,
+        verdict: verdict,
+        scoreCh: scoreCh,
+        scoreRb: scoreRb,
+        winner: winner
+      };
+    }).filter(Boolean);
+  }
+
+  function collectCardPayload(card) {
+    var modelName = (card.querySelector('.model-name') || {}).textContent || '';
+    var wordCount = (card.querySelector('.word-count') || {}).textContent || '';
+    var isRecommended = card.classList.contains('recommended');
+    var summaryEl = card.querySelector('.card-summary-text .condensed-answer');
+    var summary = summaryEl ? htmlToMarkdown(summaryEl) : '';
+    var fullEl = card.querySelector('.full-answer');
+    var fullMd = fullEl ? htmlToMarkdown(fullEl) : '';
+    var question = (document.querySelector('.question') || {}).textContent || '';
+    var ts = new Date();
+    var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
+    var tsStr = ts.getFullYear() + '-' + pad(ts.getMonth() + 1) + '-' + pad(ts.getDate())
+              + ' ' + pad(ts.getHours()) + ':' + pad(ts.getMinutes());
+
+    // 所见即所享：mode 决定是否带辩论
+    var isDebateMode = document.body.classList.contains('mode-debate');
+    var debates = isDebateMode ? collectDebatesFromCard(card) : [];
+
+    return {
+      modelName: modelName.trim(),
+      wordCount: wordCount.trim(),
+      isRecommended: isRecommended,
+      question: question.trim(),
+      summary: summary,
+      fullMd: fullMd,
+      timestamp: tsStr,
+      mode: isDebateMode ? 'debate' : 'compare',
+      debates: debates
+    };
+  }
+
+  function buildMdx(p) {
+    // 结构：# 问题（唯一 Heading，档案大纲侧栏的全部锚点——用户按问题索引文档）
+    //       模型·时间·字数（普通段落，meta 信息不进大纲）
+    //       核心观点（加粗段落）
+    //       答案正文（原 Markdown 里所有 #~###### 统一转加粗段落，不再污染大纲）
+    //       [debate mode] 辩论区（挑战/反驳/判词，每条一个黄色 Callout 分隔）
+    // 设计原则：
+    //   1) 尊重原 Markdown 的语义层级，不复刻 HTML 视觉；档案靠问题锚点检索。
+    //   2) 所见即所享：mode=debate 时卡片本体就带辩论区，分享同步带；mode=compare 时辩论隐藏，分享也不带。
+    var star = p.isRecommended ? ' ⭐' : '';
+    // 把答案内部的所有 Markdown 标题（^#+ ）转成加粗段落，防止它们出现在大纲侧栏
+    var bodyMd = (p.fullMd || '').replace(/^#{1,6}\s+(.+)$/gm, '**$1**');
+    var parts = [];
+    parts.push('# ' + p.question);
+    parts.push('');
+    parts.push(p.modelName + star + '　·　' + p.timestamp + '　·　' + p.wordCount);
+    parts.push('');
+    if (p.summary) {
+      // 用 Callout 浅黄高亮块强调核心观点——视觉权重比正文还重，和扉页灰色 BlockQuote 拉开差异
+      // 腾讯文档 Callout 不认 type="info/warning"，必须直接传 blockColor/borderColor 属性
+      parts.push('<Callout blockColor="yellow" borderColor="yellow">');
+      parts.push('**核心观点**：' + p.summary);
+      parts.push('</Callout>');
+      parts.push('');
+    }
+    parts.push(bodyMd);
+    parts.push('');
+
+    // ---------- 辩论区（仅 debate mode 有值） ----------
+    if (p.debates && p.debates.length) {
+      parts.push('---');
+      parts.push('');
+      // 加粗段落而不是 Heading：避免污染腾讯文档大纲侧栏
+      parts.push('**⚔️ 交叉辩论**　·　共 ' + p.debates.length + ' 轮');
+      parts.push('');
+      p.debates.forEach(function(d, i) {
+        var winTag = d.winner === 'challenge' ? '🏆 挑战方胜'
+                   : d.winner === 'rebuttal'  ? '🏆 反驳方胜'
+                   : '平局';
+        parts.push('**第 ' + (i + 1) + ' 轮**　·　' + winTag);
+        parts.push('');
+
+        // 挑战
+        var chHeader = '🔴 **挑战方';
+        if (d.challenger) chHeader += ' · ' + d.challenger;
+        chHeader += '**';
+        if (d.challengeReason) chHeader += '　' + d.challengeReason;
+        parts.push(chHeader);
+        parts.push('');
+        if (d.challengeBody) { parts.push(d.challengeBody); parts.push(''); }
+
+        // 反驳
+        parts.push('🔵 **反驳**');
+        parts.push('');
+        if (d.rebuttalBody) { parts.push(d.rebuttalBody); parts.push(''); }
+
+        // 裁判判词
+        if (d.verdict) {
+          var judgeLine = '🎯 **裁判';
+          if (d.judge) judgeLine += ' · ' + d.judge;
+          judgeLine += '**';
+          if (d.scoreCh && d.scoreRb) {
+            judgeLine += '　·　挑战 **' + d.scoreCh + '** · 反驳 **' + d.scoreRb + '**';
+          }
+          // 裁判判词用 BlockQuote（> 灰条），视觉上和扉页的权威注解一致；
+          // 不用 Callout（腾讯文档提示框仅用绿/黄，判词中性语义不配色）
+          parts.push('> ' + judgeLine);
+          parts.push('>');
+          d.verdict.split('\n').forEach(function(line) {
+            parts.push('> ' + line);
+          });
+          parts.push('');
+        }
+      });
+    }
+
+    parts.push('---');
+    parts.push('');
+    return parts.join('\n');
+  }
+
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.header-share-btn, .answer-share-btn');
+    if (!btn) return;
+    e.stopPropagation();
+    var card = btn.closest('.card');
+    if (!card) return;
+    var payload = collectCardPayload(card);
+    var mdx = buildMdx(payload);
+    copyToClipboard(mdx, '已复制，粘给 AI 存档 📋');
+  });
+
+  function getHero() { return grid.querySelector('.card:not(.collapsed)'); }
+  function getSidebar() { return grid.querySelector('.sidebar'); }
+
+  function promoteToHero(card) {
+    var hero = getHero();
+    var sidebar = getSidebar();
+
+    // 关键：在挪 hero 之前先记下 card 在 sidebar 里的下一个兄弟。
+    // 等下把老 hero 用 insertBefore(hero, cardNextSibling) 插回 card 原来的槽位，
+    // 实现"主卡和被点击的副卡交换位置"的语义。
+    // 若 card 是 sidebar 最后一个，cardNextSibling = null，insertBefore(hero, null)
+    // 等价于 appendChild，刚好正确。
+    var cardNextSibling = card.nextSibling;
+
+    // Demote existing hero → collapsed, move to sidebar
+    // 注意：不动 .recommended class——它只代表"是否为推荐回答"（数据状态），
+    // 与"是否在主卡位"（布局状态 = 是否有 .collapsed）解耦。
+    // 布局走 .card:not(.collapsed)，金边/金色高光走 .card.recommended，互不干扰。
+    if (hero && hero !== card) {
+      hero.classList.add('collapsed');
+      // 老主卡降级：切回 collapsed 态，清掉 answer-section 上 syncHeroToSidebar
+      // 注入的锁高（副卡不需要等高约束），重置展开按钮。
+      var oldSection = hero.querySelector('.answer-section');
+      if (oldSection) {
+        oldSection.classList.add('is-collapsed');
+        oldSection.style.minHeight = '';
+        oldSection.style.maxHeight = '';
+        var oldBtn = oldSection.querySelector('.answer-toggle');
+        if (oldBtn) {
+          oldBtn.classList.remove('expanded');
+          var oldWc = oldBtn.getAttribute('data-wc') || '';
+          oldBtn.innerHTML = '展开回答 · ' + oldWc + ' 字';
+          oldBtn.style.display = '';
+        }
+      }
+      if (sidebar) {
+        // 把老主卡插到被点击副卡原来的位置（即 cardNextSibling 之前），
+        // 实现"主卡和被点击副卡交换位置"。其他副卡完全不动。
+        sidebar.insertBefore(hero, cardNextSibling);
+      }
+    }
+
+    // Promote clicked card → full expanded, move to hero slot
+    card.classList.remove('collapsed');
+    // 新主卡的 answer-section 也要清掉残留锁高，让 syncHeroToSidebar 重新计算
+    var newSection = card.querySelector('.answer-section');
+    if (newSection) {
+      newSection.style.minHeight = '';
+      newSection.style.maxHeight = '';
+    }
+    if (sidebar) grid.insertBefore(card, sidebar);
+
+    // 切卡完成，重新同步主卡折叠态高度（sidebar 高度可能变了：副卡内容差异）
+    // 用 rAF 等待 layout 完成再测，避免读到旧 layout 的 offsetHeight
+    if (typeof syncHeroToSidebar === 'function') {
+      requestAnimationFrame(function() { syncHeroToSidebar(); });
+    }
+  }
+
+  // --- Card click → ONLY sidebar cards promote to hero ---
+  document.querySelectorAll('.card-header').forEach(function(header) {
+    header.addEventListener('click', function() {
+      var card = this.closest('.card');
+
+      // ONLY collapsed (sidebar) cards respond to click
+      if (card.classList.contains('collapsed')) {
+        promoteToHero(card);
+      }
+    });
+  });
+
+  // --- Answer section: collapsed (mask preview of full-answer) ↔ expanded ---
+  // 折叠态：.answer-section 加 .is-collapsed 类，CSS 让 .full-answer 截断 + 渐隐遮罩；
+  // 展开态：移除 .is-collapsed，full-answer 自然展开。
+  // 主卡折叠态实际高度由 syncHeroToSidebar 注入 min/max-height 锁定。
+  document.querySelectorAll('.answer-section').forEach(function(section) {
+    var fullAnswer = section.querySelector('.full-answer');
+    var btn = section.querySelector('.answer-toggle');
+    if (!fullAnswer || !btn) return;
+    // 初始态：所有 answer-section 默认折叠（包括主卡）。
+    section.classList.add('is-collapsed');
+    // 找卡片对应的模型名，用于 share 按钮
+    var card = section.closest('.card');
+    var headerShare = card ? card.querySelector('.header-share-btn') : null;
+    var modelName = headerShare ? headerShare.getAttribute('data-model') : '';
+    // 构造 action row：左 toggle + 右 share（展开后显示）
+    var row = document.createElement('div');
+    row.className = 'answer-action-row';
+    var shareBtn = document.createElement('button');
+    shareBtn.className = 'btn-ghost answer-share-btn';
+    shareBtn.setAttribute('data-model', modelName || '');
+    shareBtn.setAttribute('title', '分享此回答');
+    shareBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>分享此回答';
+    // 保证 toggle 也应用按钮基类，与 share 统一尺寸
+    btn.classList.add('btn-ghost');
+    row.appendChild(btn);
+    row.appendChild(shareBtn);
+    section.appendChild(row);
+  });
+
+  document.querySelectorAll('.answer-toggle').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var section = this.closest('.answer-section');
+      if (!section) return;
+      var fullAnswer = section.querySelector('.full-answer');
+      if (!fullAnswer) return;
+      var wc = this.getAttribute('data-wc') || '';
+      var isCollapsed = section.classList.contains('is-collapsed');
+      if (isCollapsed) {
+        // 展开：切类 + 清掉 syncHeroToSidebar 注入的锁高，让 section 走自然高度。
+        section.classList.remove('is-collapsed');
+        this.classList.add('expanded');
+        this.innerHTML = '收起回答 · ' + wc + ' 字';
+        section.style.minHeight = '';
+        section.style.maxHeight = '';
+      } else {
+        // 收起：切类，重新跑 syncHeroToSidebar 算回锁高
+        section.classList.add('is-collapsed');
+        this.classList.remove('expanded');
+        this.innerHTML = '展开回答 · ' + wc + ' 字';
+        syncHeroToSidebar();
+      }
+    });
+  });
+
+  // --- 主卡折叠态：让正文消失线（full-answer 底）= sidebar 底 ---
+  // 锚定逻辑：用 bounding rect 直接算 full-answer 应有的高度，
+  // section 再加上 action-row（btn + 其 margin-top）的空间。
+  // answer-toggle 和 debate-panel 都落在 sidebar 底外下方，主卡比 sidebar 长一截。
+  function syncHeroToSidebar() {
+    var heroCard = document.querySelector('.card:not(.collapsed)');
+    var sidebar = document.querySelector('.sidebar');
+    if (!heroCard || !sidebar) return;
+    var section = heroCard.querySelector('.answer-section');
+    if (!section) return;
+    var fullAnswer = section.querySelector('.full-answer');
+    var btn = section.querySelector('.answer-toggle');
+
+    var sidebarRect = sidebar.getBoundingClientRect();
+    var sectionRect = section.getBoundingClientRect();
+
+    // full-answer 期望高度 = sidebar 底 − section 顶
+    // （full-answer 是 section 第一个子，顶位置 = section 顶）
+    var fullAnswerTargetH = sidebarRect.bottom - sectionRect.top;
+
+    // section 要装下 full-answer + action-row。gap 读 action-row 的 margin-top
+    // （btn 自己的 marginTop 是 0，gap 在外层容器上）。
+    var rowH = 0, rowGap = 0;
+    if (btn) {
+      var actionRow = btn.closest('.answer-action-row') || btn;
+      rowH = actionRow.offsetHeight;
+      rowGap = parseFloat(getComputedStyle(actionRow).marginTop) || 0;
+    }
+    var sectionTargetH = fullAnswerTargetH + rowGap + rowH;
+
+    // 防御：极小视窗下别算成负数
+    if (fullAnswerTargetH < 80) {
+      fullAnswerTargetH = 80;
+      sectionTargetH = fullAnswerTargetH + rowGap + rowH;
+    }
+
+    // 退化态：正文自然高度 ≤ 期望高度 → 不用截断，隐藏按钮，
+    // section 仍按 fullAnswerTargetH 撑开（让正文底贴 sidebar 底）。
+    if (fullAnswer && fullAnswerTargetH >= fullAnswer.scrollHeight) {
+      section.style.minHeight = fullAnswerTargetH + 'px';
+      section.style.maxHeight = '';
+      if (btn) btn.style.display = 'none';
+      return;
+    }
+
+    // 正常截断态：section 锁到 sectionTargetH，full-answer flex:1 自动吃满 − action-row。
+    if (btn) btn.style.display = '';
+    if (section.classList.contains('is-collapsed')) {
+      section.style.minHeight = sectionTargetH + 'px';
+      section.style.maxHeight = sectionTargetH + 'px';
+    } else {
+      section.style.minHeight = '';
+      section.style.maxHeight = '';
+    }
+  }
+  // 初次渲染后同步一次
+  syncHeroToSidebar();
+  // 视窗变化时重新同步
+  window.addEventListener('resize', syncHeroToSidebar);
+
+  // --- Debate panel toggle (click panel header) ---
+  // Only bind if header exists (skip no-content panels)
+  document.querySelectorAll('.debate-panel.has-content .debate-panel-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var panel = this.parentElement;
+      panel.classList.toggle('open');
+      this.classList.toggle('open');
+    });
+  });
+
+  // Auto-open panels that have content (but keep items collapsed)
+  document.querySelectorAll('.debate-panel.has-content').forEach(function(panel) {
+    panel.classList.add('open');
+    var header = panel.querySelector('.debate-panel-header');
+    if (header) header.classList.add('open');
+  });
+
+  // --- Debate item expand (click trigger) ---
+  // 预览态：显示 .debate-clash-preview（红蓝要点 + 裁判一句话）
+  // 展开态：隐藏预览，显示 .debate-clash-full（双方完整观点 + 裁判完整判词）
+  // 触发器会从 preview 里移到 full 的末尾，点击即切换
+  // 同时切换后把卡片顶部对齐到原先触发器位置附近，避免高度差导致滚动位置飞走
+  document.querySelectorAll('.debate-item').forEach(function(item) {
+    var triggers = item.querySelectorAll('.debate-expand-trigger');
+    if (triggers.length === 0) return;
+
+    // 为展开态补一个"收起"触发器（放在 .debate-clash-full 末尾）
+    var full = item.querySelector('.debate-clash-full');
+    if (full && !full.querySelector('.debate-expand-trigger')) {
+      var collapseBtn = document.createElement('div');
+      collapseBtn.className = 'debate-expand-trigger';
+      collapseBtn.textContent = '收起';
+      full.appendChild(collapseBtn);
+      triggers = item.querySelectorAll('.debate-expand-trigger');
+    }
+
+    triggers.forEach(function(trigger) {
+      trigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        // 记录点击瞬间，触发器相对视口的位置
+        var triggerRectBefore = trigger.getBoundingClientRect();
+        var itemRectBefore = item.getBoundingClientRect();
+
+        // 切换状态
+        item.classList.toggle('expanded');
+
+        // 切换后，让"卡片顶部"滚到原先卡片顶部在视口中的位置，锚点不飞走
+        requestAnimationFrame(function() {
+          var itemRectAfter = item.getBoundingClientRect();
+          var delta = itemRectAfter.top - itemRectBefore.top;
+          if (Math.abs(delta) > 1) {
+            window.scrollBy({ top: delta, left: 0, behavior: 'instant' });
+          }
+          // 兜底：若卡片顶部跑到视口外（太靠上），滚回可视
+          var nowTop = item.getBoundingClientRect().top;
+          if (nowTop < 0 || nowTop > window.innerHeight * 0.8) {
+            item.scrollIntoView({ block: 'start', behavior: 'smooth' });
+          }
+        });
+      });
+    });
+  });
+});
+</script>
+</head>
+<body>
+
+<div class="hero">
+  <div class="header-label">MoCompare · 2026-04-26 01:33 <span class="mode-switch" role="tablist" aria-label="模式切换"><button type="button" class="mode-switch-btn active" data-mode="debate" role="tab" aria-selected="true">⚔️ Debate</button><button type="button" class="mode-switch-btn" data-mode="compare" role="tab" aria-selected="false">⚖️ Compare</button></span></div>
+  <div class="question">平板支撑做 1 分钟是什么水平？</div>
+  <div class="hero-divider"></div>
+  <div class="roster-section">
+    <div class="roster-title">参与模型</div>
+    <div class="roster">
+    <div class="roster-item"><span class="roster-dot" style="background:#D97706"></span>Claude Sonnet</div>
+<div class="roster-item"><span class="roster-dot" style="background:#10A37F"></span>GPT-4o</div>
+<div class="roster-item"><span class="roster-dot" style="background:#4285F4"></span>Gemini</div>
+<div class="roster-item"><span class="roster-dot" style="background:#6B7280"></span>GLM-4</div>
+  </div>
+  </div>
+</div>
+
+<div class="hero-summary">
+  <div class="winner-banner">
+    <span class="winner-icon">🏆</span>
+    <span class="winner-text">推荐回答：<span class="winner-model-name">Claude Sonnet</span> — <span class="winner-reason-compare">结论稳健（1 分钟=及格/普通偏上），分级表简洁不越界，引用 McGill 提示『超 2 分钟收益递减』帮助用户避免盲目刷时长。</span><span class="winner-reason-debate">答案本身结论稳健、分级表简洁不越界，引用 McGill 提示『超 2 分钟收益递减』帮助用户避免盲目刷时长；辩论环节进一步加分——精准指出 GLM-4 的吉尼斯数字错误、伪精确百分比与分级偏松三点，且自身未被挑战。</span></span>
+  </div>
+  <div class="hero-summary-debate-slot">
+    <div class="debate-summary"><span class="debate-summary-icon">⚔️</span><span class="debate-summary-text"><strong>辩论结果：</strong>三家围攻 <strong>GLM-4</strong>，GLM-4 打平 2 场、失守 1 场</span></div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card recommended" data-model="Claude Sonnet"><div class="card-header"><div class="header-left"><span class="model-badge" style="background:#D97706"></span><span class="model-name">Claude Sonnet</span><span class="word-count">823 字</span><span class="recommended-tag">⭐ 推荐</span></div><div class="header-right"><button class="header-share-btn" data-model="Claude Sonnet" title="分享此回答"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>分享此回答</button><span class="expand-hint">主卡查看</span></div></div><div class="card-summary-wrap"><div class="card-summary-title">核心观点</div><div class="card-summary-text"><div class="condensed-answer"><p>1 分钟=『及格线』；质量比时长更重要；超 2 分钟收益递减</p></div></div></div><div class="card-debate-record"><span class="card-record-text"><span class="card-record-upheld suffix-strong-hold">未被挑战 ✌️</span></span></div><div class="card-body"><div class="card-full"><div class="answer-section"><div class="answer-content"><div class="condensed-answer"><p>1 分钟属于"及格线"水平，说明你有基本的核心力量基础，但距离"优秀"还有一定距离。这是大多数普通成年人经过短期训练就能达到的门槛。</p>
+<p>普通成年男性：建议能坚持 1 分 30 秒 – 2 分钟</p>
+<p>普通成年女性：能坚持 1 分钟 – 1 分 30 秒 即算不错</p>
+<p>军人 / 运动员标准：通常要求 2 分钟以上</p>
+<p>健身爱好者目标：稳定 2 – 3 分钟较为理想</p>
+<p>身体呈一条直线，不塌腰、不翘臀</p>
+<p>运动科学家 Stuart McGill 认为，单次平板支撑超过 2 分钟意义有限，不如改为多组短时 + 变式训练（侧平板、动态平板），效果更好。</p>
+<p>核心力量的评估还应结合侧平板、卷腹、俯卧撑等综合指标。</p>
+<p>能标准完成 1 分钟，说明你身体素质处于普通偏上的水平，继续训练 1 – 2 个月通常可以提升到 2 分钟。</p></div></div><div class="full-answer"><h1>平板支撑 1 分钟是什么水平？</h1>
+<h2>总体评价</h2>
+<p><strong>1 分钟属于"及格线"水平</strong>，说明你有基本的核心力量基础，但距离"优秀"还有一定距离。这是大多数普通成年人经过短期训练就能达到的门槛。</p>
+<h2>平板支撑水平分级参考</h2>
+<table>
+<tr><th>坚持时长</th><th>水平评级</th><th>说明</th></tr>
+<tr><td>< 30 秒</td><td>较差</td><td>核心力量明显不足，需加强训练</td></tr>
+<tr><td>30 秒 – 1 分钟</td><td>一般</td><td>普通水平，有基础但较弱</td></tr>
+<tr><td><strong>1 – 2 分钟</strong></td><td><strong>合格 / 良好</strong></td><td><strong>普通健身人群的正常水平</strong></td></tr>
+<tr><td>2 – 3 分钟</td><td>优秀</td><td>核心力量较强，规律训练者</td></tr>
+<tr><td>3 – 5 分钟</td><td>很强</td><td>接近运动员水准</td></tr>
+<tr><td>> 5 分钟</td><td>顶尖</td><td>专业水平，少数人能达到</td></tr>
+</table>
+<h2>不同人群的参考标准</h2>
+<ul>
+<li><strong>普通成年男性</strong>：建议能坚持 1 分 30 秒 – 2 分钟</li>
+<li><strong>普通成年女性</strong>：能坚持 1 分钟 – 1 分 30 秒 即算不错</li>
+<li><strong>军人 / 运动员标准</strong>：通常要求 2 分钟以上</li>
+<li><strong>健身爱好者目标</strong>：稳定 2 – 3 分钟较为理想</li>
+</ul>
+<h2>一些提醒</h2>
+<ol>
+<li><strong>质量比时长更重要</strong></li>
+</ol>
+<ul>
+<li>身体呈一条直线，不塌腰、不翘臀</li>
+<li>收紧腹部和臀部</li>
+<li>肩肘垂直，颈部中立</li>
+<li>正常呼吸，不憋气</li>
+</ul>
+<ol>
+<li><strong>不建议盲目追求超长时间</strong></li>
+</ol>
+<p>   运动科学家 Stuart McGill 认为，单次平板支撑超过 2 分钟意义有限，不如改为<strong>多组短时 + 变式训练</strong>（侧平板、动态平板），效果更好。</p>
+<ol>
+<li><strong>作为参考而非目标</strong></li>
+</ol>
+<p>   核心力量的评估还应结合侧平板、卷腹、俯卧撑等综合指标。</p>
+<h2>结论</h2>
+<p><strong>能标准完成 1 分钟，说明你身体素质处于普通偏上的水平</strong>，继续训练 1 – 2 个月通常可以提升到 2 分钟。</p></div><button class="answer-toggle" data-wc="823">展开回答 · 823 字</button></div><div class="debate-panel no-content"><div class="no-debate-inline">未被挑战 ✌️</div></div></div></div></div>
+<div class="sidebar"><div class="card collapsed" data-model="GPT-4o"><div class="card-header"><div class="header-left"><span class="model-badge" style="background:#10A37F"></span><span class="model-name">GPT-4o</span><span class="word-count">885 字</span></div><div class="header-right"><button class="header-share-btn" data-model="GPT-4o" title="分享此回答"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>分享此回答</button><span class="expand-hint">主卡查看</span></div></div><div class="card-summary-wrap"><div class="card-summary-title">核心观点</div><div class="card-summary-text"><div class="condensed-answer"><p>1 分钟=及格到中等偏下；性别/年龄细分维度最全；超 2 分钟边际收益递减</p></div></div></div><div class="card-debate-record"><span class="card-record-text"><span class="card-record-upheld suffix-strong-hold">未被挑战 ✌️</span></span></div><div class="card-body"><div class="card-full"><div class="answer-section"><div class="answer-content"><div class="condensed-answer"><p>结论：1 分钟平板支撑属于『及格到中等偏下』水平，能达到一般健康人群的基础标准，但离『优秀』还有明显差距。</p>
+<p>美国运动医学会（ACSM） 与 军警体能测试：通常把 60 秒作为基础及格线。</p>
+<p>吉尼斯世界纪录：男子 George Hood，2020 年。</p>
+<p>健身教练共识：普通人 2 分钟以内最有效，之后边际收益递减，建议改用侧平板、死虫式、悬垂举腿。</p>
+<p>动作质量比时长更重要：1 分钟标准动作胜过 3 分钟变形姿势。</p>
+<p>进阶方向：延长到 1.5 – 2 分钟；负重或不稳定平面；侧平板/动态平板。</p>
+<p>不必执着刷时长：核心训练讲究多样性，单一动作练到 2 分钟以上意义不大。</p>
+<p>一句话总结：1 分钟=健康成人应具备的最低门槛，及格分，但还有较大提升空间。</p></div></div><div class="full-answer"><h1>平板支撑做 1 分钟是什么水平？</h1>
+<h2>总体评价</h2>
+<p><strong>结论：1 分钟平板支撑属于『及格到中等偏下』水平</strong>，能达到一般健康人群的基础标准，但离『优秀』还有明显差距。</p>
+<h2>不同人群的水平参考表</h2>
+<table>
+<tr><th>时长</th><th>普通成年人水平</th><th>说明</th></tr>
+<tr><td>< 30 秒</td><td>较差</td><td>核心力量不足</td></tr>
+<tr><td>30 秒 – 1 分钟</td><td>及格</td><td>基础核心稳定性达标</td></tr>
+<tr><td><strong>1 – 2 分钟</strong></td><td><strong>中等 / 一般健康水平</strong></td><td>多数健身爱好者的起点</td></tr>
+<tr><td>2 – 3 分钟</td><td>良好</td><td>核心较强，健身习惯良好</td></tr>
+<tr><td>3 – 5 分钟</td><td>优秀</td><td>接近运动员训练水平</td></tr>
+<tr><td>> 5 分钟</td><td>顶尖</td><td>专业训练者水平</td></tr>
+</table>
+<h2>按性别和年龄细分（参考值）</h2>
+<table>
+<tr><th>人群</th><th>及格</th><th>良好</th><th>优秀</th></tr>
+<tr><td>男性 20 – 40 岁</td><td>60 秒</td><td>90 – 120 秒</td><td>180 秒+</td></tr>
+<tr><td>女性 20 – 40 岁</td><td>45 秒</td><td>60 – 90 秒</td><td>120 秒+</td></tr>
+<tr><td>40 岁以上</td><td>30 – 45 秒</td><td>60 秒</td><td>90 秒+</td></tr>
+</table>
+<h2>专业视角</h2>
+<ul>
+<li><strong>美国运动医学会（ACSM）</strong> 与 <strong>军警体能测试</strong>：通常把 60 秒作为基础及格线。</li>
+<li><strong>吉尼斯世界纪录</strong>：男子 George Hood，2020 年。</li>
+<li><strong>健身教练共识</strong>：普通人 2 分钟以内最有效，之后边际收益递减，建议改用侧平板、死虫式、悬垂举腿。</li>
+</ul>
+<h2>建议</h2>
+<ol>
+<li><strong>动作质量比时长更重要</strong>：1 分钟标准动作胜过 3 分钟变形姿势。</li>
+<li><strong>进阶方向</strong>：延长到 1.5 – 2 分钟；负重或不稳定平面；侧平板/动态平板。</li>
+<li><strong>不必执着刷时长</strong>：核心训练讲究多样性，单一动作练到 2 分钟以上意义不大。</li>
+</ol>
+<p><strong>一句话总结</strong>：1 分钟=健康成人应具备的<strong>最低门槛</strong>，及格分，但还有较大提升空间。</p></div><button class="answer-toggle" data-wc="885">展开回答 · 885 字</button></div><div class="debate-panel no-content"><div class="no-debate-inline">未被挑战 ✌️</div></div></div></div></div>
+<div class="card collapsed" data-model="Gemini"><div class="card-header"><div class="header-left"><span class="model-badge" style="background:#4285F4"></span><span class="model-name">Gemini</span><span class="word-count">808 字</span></div><div class="header-right"><button class="header-share-btn" data-model="Gemini" title="分享此回答"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>分享此回答</button><span class="expand-hint">主卡查看</span></div></div><div class="card-summary-wrap"><div class="card-summary-title">核心观点</div><div class="card-summary-text"><div class="condensed-answer"><p>四类人群分级（普通男/女/健身爱好者/运动员）；引用 McGill 的 2 分钟阈值</p></div></div></div><div class="card-debate-record"><span class="card-record-text">1 次挑战 · <span class="card-record-upheld suffix-neutral">全部扛住</span></span><div class="card-record-bar"><span class="card-record-bar-cell fill-win"></span></div></div><div class="card-body"><div class="card-full"><div class="answer-section"><div class="answer-content"><div class="condensed-answer"><p>对普通健身爱好者来说，1 分钟属中等偏下；对久坐的普通人（尤其女性或 40 岁以上），1 分钟已是合格。</p>
+<p>美国运动委员会（ACE） 建议普通成年人目标值 1 – 2 分钟。</p>
+<p>核心训练专家 Stuart McGill：能稳定支撑 2 分钟就足够，再长意义不大。</p>
+<p>世界纪录：男子平板支撑已超过 9 小时（乔治·胡德，2020 年）。</p>
+<p>✅ 核心肌群基础尚可，没有严重退化。</p>
+<p>⚠️ 距离『强核心』还有差距。</p>
+<p>💡 单纯延长时间收益递减，不如做负重平板、侧平板、动态平板等进阶变式。</p>
+<p>轻松做到 1 分钟 → 升级到侧平板、抬腿平板、负重平板。</p>
+<p>刚达到 1 分钟 → 保持每周 3 – 4 次，2 个月可到 2 分钟。</p>
+<p>腰部酸痛 → 先检查姿势，不要延长时间。</p></div></div><div class="full-answer"><h1>平板支撑 1 分钟是什么水平？</h1>
+<h2>简要结论</h2>
+<p>对<strong>普通健身爱好者</strong>来说，1 分钟属<strong>中等偏下</strong>；对<strong>久坐的普通人</strong>（尤其女性或 40 岁以上），1 分钟已是<strong>合格</strong>。</p>
+<h2>不同人群的参考标准</h2>
+<table>
+<tr><th>人群</th><th>不合格</th><th>合格</th><th>良好</th><th>优秀</th></tr>
+<tr><td>成年男性</td><td>< 30 秒</td><td>30 – 60 秒</td><td>1 – 2 分钟</td><td>> 2 分钟</td></tr>
+<tr><td>成年女性</td><td>< 20 秒</td><td>20 – 45 秒</td><td>45 秒 – 1.5 分钟</td><td>> 1.5 分钟</td></tr>
+<tr><td>健身爱好者</td><td>< 1 分钟</td><td>1 – 2 分钟</td><td>2 – 4 分钟</td><td>> 4 分钟</td></tr>
+<tr><td>运动员 / 核心训练者</td><td>< 2 分钟</td><td>2 – 3 分钟</td><td>3 – 5 分钟</td><td>> 5 分钟</td></tr>
+</table>
+<h2>专业视角</h2>
+<ul>
+<li><strong>美国运动委员会（ACE）</strong> 建议普通成年人目标值 1 – 2 分钟。</li>
+<li><strong>核心训练专家 Stuart McGill</strong>：能稳定支撑 2 分钟就足够，再长意义不大。</li>
+<li><strong>世界纪录</strong>：男子平板支撑已超过 9 小时（乔治·胡德，2020 年）。</li>
+</ul>
+<h2>1 分钟的实际意义</h2>
+<ul>
+<li>✅ 核心肌群基础尚可，没有严重退化。</li>
+<li>⚠️ 距离『强核心』还有差距。</li>
+<li>💡 单纯延长时间收益递减，不如做负重平板、侧平板、动态平板等进阶变式。</li>
+</ul>
+<h2>动作质量比时长更重要</h2>
+<p><strong>标准姿势自检：</strong></p>
+<ol>
+<li>头、背、臀、脚跟成一条直线</li>
+<li>核心和臀部持续收紧</li>
+<li>肘关节在肩膀正下方</li>
+<li>正常呼吸，不憋气</li>
+</ol>
+<h2>建议</h2>
+<ul>
+<li>轻松做到 1 分钟 → 升级到侧平板、抬腿平板、负重平板。</li>
+<li>刚达到 1 分钟 → 保持每周 3 – 4 次，2 个月可到 2 分钟。</li>
+<li>腰部酸痛 → 先检查姿势，不要延长时间。</li>
+</ul></div><button class="answer-toggle" data-wc="808">展开回答 · 808 字</button></div><div class="debate-panel has-content"><div class="debate-panel-header open"><span class="icon">⚔️</span><span>辩论面板</span><span class="debate-count">1 条</span></div><div class="debate-items"><div class="debate-item"><div class="debate-clash-preview"><div class="debate-clash-grid"><div class="debate-clash-cell debate-clash-cell--challenge"><div class="debate-clash-cell-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>GLM-4</strong></span></div><div class="debate-clash-summary">Gemini 引 McGill 2 分钟上限，又要求优秀 &gt;4 分钟；运动员一刀切</div></div><div class="debate-clash-cell debate-clash-cell--rebuttal"><div class="debate-clash-cell-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span><span class="debate-winner-pill debate-winner-pill--rebuttal">胜</span></div><div class="debate-clash-summary">区分『现状标尺』与『训练处方』解自相矛盾；同意运动员不该一刀切</div></div></div><div class="debate-verdict-preview"><span class="debate-verdict-prefix"><span class="debate-verdict-prefix-icon">🎯</span>裁判 · <strong>Claude Opus</strong>：</span><span class="debate-verdict-summary">GLM 的矛盾指控本身有道理，但 Gemini 用『现状标尺 vs 训练处方』区分成功化解了表面矛盾，并大方承认运动员一刀切问题——这…</span></div><div class="debate-expand-trigger">查看完整观点</div></div><div class="debate-clash-full"><div class="debate-clash-full-block debate-clash-full-block--challenge"><div class="debate-clash-full-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>GLM-4</strong></span></div><div class="debate-clash-full-reason">分级表内部自相矛盾 + 对运动员以偏概全</div><div class="debate-clash-full-body"><p>Gemini 既引 McGill『超过 2 分钟意义有限』，又把健身爱好者『优秀门槛』设为 >4 分钟、运动员『不合格线』设为 <2 分钟——既然权威认为 2 分钟后边际收益递减，再要求 4 分钟+ 才优秀，显然矛盾。把『运动员 <2 分钟不合格』套用到所有运动员也不合理：平板测静态核心耐力，而马拉松/游泳/羽毛球/短跑/举重等专项训练重心不在此，其平板支撑未必到 2 分钟。</p></div></div><div class="debate-clash-full-block debate-clash-full-block--rebuttal"><div class="debate-clash-full-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span><span class="debate-winner-pill debate-winner-pill--rebuttal">胜</span></div><div class="debate-clash-full-reason">区分『现状标尺』与『训练处方』解自相矛盾；同意运动员不该一刀切</div><div class="debate-clash-full-body"><p>感谢 GLM-4 的指正，这两点批评基本成立，我先认下，再做必要澄清。</p>
+<p><strong>关于『自相矛盾』——承认表述不清，但逻辑可以统一</strong></p>
+<p>GLM-4 指出我一边引 McGill 的『2 分钟足够』，一边把『优秀 >4 分钟』写进分级表，读起来确实拧巴。问题在于我<strong>没有区分两个层面</strong>：</p>
+<ul>
+<li><strong>分级表是『现状标尺』</strong>：衡量当前能撑多久，反映相对水平。能撑 4 分钟的人客观上比撑 1 分钟的人核心耐力强，这是事实描述。</li>
+<li><strong>McGill 的 2 分钟是『训练目标建议』</strong>：核心观点是超过 2 分钟边际收益递减，继续延长不如改做侧平板、死虫、鸟狗等动态/抗旋转动作。这是训练处方。</li>
+</ul>
+<p>两者并不冲突——<strong>『能做到』和『值得继续把时间花上去』是两回事</strong>。但原答案没把这层窗户纸捅破，导致读者以为我推荐大家练到 4 分钟以上，这是表述失当。</p>
+<p><strong>关于『以偏概全』——完全同意，运动员不该一刀切</strong></p>
+<p>平板支撑测的是<strong>抗伸展的静态核心耐力</strong>，和专项表现相关性不一致：</p>
+<ul>
+<li>对体操、格斗、划船这类核心刚性需求高的项目，2 分钟+ 确实是基础门槛；</li>
+<li>但<strong>短跑、举重、游泳、羽毛球</strong>的核心需求更偏爆发/旋转/传导，训练重心不在静态支撑上，撑不到 2 分钟不等于『不合格』。</li>
+</ul>
+<p>『运动员组』应改为<strong>『以核心静态耐力为训练重点的综合训练者』</strong>。</p>
+<p><strong>需要捍卫的一点</strong>：分级表作为<strong>面向一般健身人群的横向参考</strong>仍有价值——读者问『1 分钟是什么水平』，他要的就是相对坐标。我该做的是在表头加限定『一般健身者参考』，并在末尾补一句：<strong>达到 2 分钟即可转向更多样化的核心训练，不必执着于延长时间</strong>。</p></div></div><div class="debate-verdict-full"><div class="debate-verdict-full-header"><span class="debate-verdict-prefix-icon">🎯</span><span>裁判 · <strong>Claude Opus</strong></span><span class="debate-verdict-score"><span class="debate-verdict-score-label">说服力</span><span class="debate-verdict-score-item debate-verdict-score-item--challenge">挑战方 <span class="debate-verdict-score-num">7</span></span><span class="debate-verdict-score-sep">/</span><span class="debate-verdict-score-item debate-verdict-score-item--rebuttal">反驳方 <span class="debate-verdict-score-num">8</span></span></span></div><div class="debate-verdict-full-body"><p>GLM 的矛盾指控本身有道理，但 Gemini 用『现状标尺 vs 训练处方』区分成功化解了表面矛盾，并大方承认运动员一刀切问题——这种认错+结构化澄清的回应比原攻击更具建设性。</p></div></div></div></div></div></div></div></div></div>
+<div class="card collapsed" data-model="GLM-4"><div class="card-header"><div class="header-left"><span class="model-badge" style="background:#6B7280"></span><span class="model-name">GLM-4</span><span class="word-count">719 字</span></div><div class="header-right"><button class="header-share-btn" data-model="GLM-4" title="分享此回答"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>分享此回答</button><span class="expand-hint">主卡查看</span></div></div><div class="card-summary-wrap"><div class="card-summary-title">核心观点</div><div class="card-summary-text"><div class="condensed-answer"><p>1 分钟=及格合格；男 60 秒/女 45-60 秒达标；含多处未证实数据</p></div></div></div><div class="card-debate-record"><span class="card-record-text">3 次挑战 · <span class="card-record-upheld suffix-neutral">1 次成立</span></span><div class="card-record-bar"><span class="card-record-bar-cell fill-lose"></span><span class="card-record-bar-cell fill-tie"></span><span class="card-record-bar-cell fill-tie"></span></div></div><div class="card-body"><div class="card-full"><div class="answer-section"><div class="answer-content"><div class="condensed-answer"><p>1 分钟属『及格合格』水平，核心力量基础正常，但距离优秀还有明显差距。</p>
+<p>普通成年人平均水平：约 45 秒 – 1 分钟</p>
+<p>军警体能测试：通常 2 分钟以上</p>
+<p>吉尼斯世界纪录：男子超过 9 小时（George Hood，2020 年）</p>
+<p>『1 分钟标准平板』远胜『3 分钟塌腰撅屁股』。</p>
+<p>基础期：每天 3 组 × 30 秒，逐步加到 1 分钟</p>
+<p>进阶期：侧平板、动态平板、抬腿平板</p>
+<p>单次超过 2 分钟意义递减，不如增加变式和组数</p>
+<p>能标准完成 1 分钟平板支撑，超过了约 60% 的普通人，属『及格健康』水平。</p></div></div><div class="full-answer"><h1>平板支撑 1 分钟是什么水平？</h1>
+<h2>总体评价</h2>
+<p><strong>1 分钟属『及格合格』水平</strong>，核心力量基础正常，但距离优秀还有明显差距。</p>
+<h2>不同人群评级</h2>
+<h3>男性</h3>
+<table>
+<tr><th>时间</th><th>评价</th></tr>
+<tr><td>< 30 秒</td><td>较差</td></tr>
+<tr><td>30 – 60 秒</td><td>及格</td></tr>
+<tr><td><strong>60 秒</strong></td><td><strong>合格/普通水平</strong></td></tr>
+<tr><td>1 – 2 分钟</td><td>良好</td></tr>
+<tr><td>2 – 4 分钟</td><td>优秀</td></tr>
+<tr><td>> 4 分钟</td><td>专业/精英</td></tr>
+</table>
+<h3>女性</h3>
+<table>
+<tr><th>时间</th><th>评价</th></tr>
+<tr><td>< 20 秒</td><td>较差</td></tr>
+<tr><td>20 – 45 秒</td><td>及格</td></tr>
+<tr><td><strong>45 – 60 秒</strong></td><td><strong>合格/普通水平</strong></td></tr>
+<tr><td>1 – 2 分钟</td><td>良好</td></tr>
+<tr><td>> 2 分钟</td><td>优秀</td></tr>
+</table>
+<h2>参考数据</h2>
+<ul>
+<li><strong>普通成年人平均水平</strong>：约 45 秒 – 1 分钟</li>
+<li><strong>军警体能测试</strong>：通常 2 分钟以上</li>
+<li><strong>吉尼斯世界纪录</strong>：男子超过 9 小时（George Hood，2020 年）</li>
+</ul>
+<h2>动作质量 > 时长</h2>
+<p>『1 分钟标准平板』远胜『3 分钟塌腰撅屁股』。</p>
+<p>正确姿势：</p>
+<ul>
+<li>头、背、臀、脚踝呈一条直线</li>
+<li>腹部收紧、臀部夹紧</li>
+<li>肩在肘正上方</li>
+<li>均匀呼吸、不憋气</li>
+</ul>
+<h2>提升建议</h2>
+<ol>
+<li><strong>基础期</strong>：每天 3 组 × 30 秒，逐步加到 1 分钟</li>
+<li><strong>进阶期</strong>：侧平板、动态平板、抬腿平板</li>
+<li>单次超过 2 分钟意义递减，不如增加变式和组数</li>
+</ol>
+<h2>结论</h2>
+<p>能标准完成 1 分钟平板支撑，<strong>超过了约 60% 的普通人</strong>，属『及格健康』水平。</p></div><button class="answer-toggle" data-wc="719">展开回答 · 719 字</button></div><div class="debate-panel has-content"><div class="debate-panel-header open"><span class="icon">⚔️</span><span>辩论面板</span><span class="debate-count">3 条</span></div><div class="debate-items"><div class="debate-item"><div class="debate-clash-preview"><div class="debate-clash-grid"><div class="debate-clash-cell debate-clash-cell--challenge"><div class="debate-clash-cell-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>Claude Sonnet</strong></span><span class="debate-winner-pill debate-winner-pill--challenge">胜</span></div><div class="debate-clash-summary">吉尼斯数字错、60% 缺来源、4 分钟专业线偏松</div></div><div class="debate-clash-cell debate-clash-cell--rebuttal"><div class="debate-clash-cell-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-summary">吉尼斯数字 + 60% 伪精确承认错误；『4 分钟专业』改为『核心耐力训练有成』</div></div></div><div class="debate-verdict-preview"><span class="debate-verdict-prefix"><span class="debate-verdict-prefix-icon">🎯</span>裁判 · <strong>Claude Opus</strong>：</span><span class="debate-verdict-summary">挑战方三项质疑全部命中，吉尼斯数字错误是硬伤。反驳方及时认错态度良好，但对『4 分钟专业』的辩护略弱——改说法不如直接删除该层级。</span></div><div class="debate-expand-trigger">查看完整观点</div></div><div class="debate-clash-full"><div class="debate-clash-full-block debate-clash-full-block--challenge"><div class="debate-clash-full-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>Claude Sonnet</strong></span><span class="debate-winner-pill debate-winner-pill--challenge">胜</span></div><div class="debate-clash-full-reason">吉尼斯纪录数据错误 + 伪精确百分比 + 分级偏松</div><div class="debate-clash-full-body"><p>1）吉尼斯世界纪录写成『超过 9 小时』，实际上 George Hood 2020.2.15 创造的是 8 小时 15 分 15 秒。GLM 版本最肯定具体，误导性最强。2）『超过约 60% 的普通人』这个具体百分比无任何来源，属凭感觉编造。3）『>4 分钟即专业水平』偏宽松——很多健身爱好者经过训练都能到 4 分钟，真正专业/军警标准通常更高，且『专业』无明确时长上限。</p></div></div><div class="debate-clash-full-block debate-clash-full-block--rebuttal"><div class="debate-clash-full-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-full-reason">吉尼斯数字 + 60% 伪精确承认错误；『4 分钟专业』改为『核心耐力训练有成』</div><div class="debate-clash-full-body"><p>Claude 的三点批评我逐条回应。</p>
+<p><strong>吉尼斯纪录数字</strong>：完全接受。George Hood 2020 年 2 月 15 日创造的男子平板支撑世界纪录实际是 <strong>8 小时 15 分 15 秒</strong>，我写『超过 9 小时』是硬错，且『具体数字 + 错误』的组合最具误导性，这个锅我担，已更正。</p>
+<p><strong>『超过约 60% 的普通人』</strong>：同样认错——ACSM、ACE、NHANES、国民体质监测都没有针对平板支撑时长的常模抽样。属于典型『伪精确』，应撤回或改为『经验观察上』。</p>
+<p><strong>『>4 分钟即专业』偏松</strong>：部分接受。Claude 说真正专业标准没有明确上限，这是对的——专业/军警体能并非看平板多久，而是看综合核心耐力 + 动作质量 + 与专项结合度。原写法把『时长 = 专业』是简化了。但『健身爱好者训练到 4 分钟』确实也不算少数，4 分钟门槛的读者心理意义仍在。可改为：『>4 分钟 = 核心静态耐力训练有成，但不等于专业』。</p></div></div><div class="debate-verdict-full"><div class="debate-verdict-full-header"><span class="debate-verdict-prefix-icon">🎯</span><span>裁判 · <strong>Claude Opus</strong></span><span class="debate-verdict-score"><span class="debate-verdict-score-label">说服力</span><span class="debate-verdict-score-item debate-verdict-score-item--challenge">挑战方 <span class="debate-verdict-score-num">9</span></span><span class="debate-verdict-score-sep">/</span><span class="debate-verdict-score-item debate-verdict-score-item--rebuttal">反驳方 <span class="debate-verdict-score-num">7</span></span></span></div><div class="debate-verdict-full-body"><p>挑战方三项质疑全部命中，吉尼斯数字错误是硬伤。反驳方及时认错态度良好，但对『4 分钟专业』的辩护略弱——改说法不如直接删除该层级。</p></div></div></div></div><div class="debate-item"><div class="debate-clash-preview"><div class="debate-clash-grid"><div class="debate-clash-cell debate-clash-cell--challenge"><div class="debate-clash-cell-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>GPT-4o</strong></span></div><div class="debate-clash-summary">无引用的 60% 百分比 + 性别差距 2:1 缺研究支撑</div></div><div class="debate-clash-cell debate-clash-cell--rebuttal"><div class="debate-clash-cell-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-summary">承认无来源数据需改为『经验区间』；性别差距 2:1 是双重失误，女优秀线应提到 2.5-3min</div></div></div><div class="debate-verdict-preview"><span class="debate-verdict-prefix"><span class="debate-verdict-prefix-icon">🎯</span>裁判 · <strong>Claude Opus</strong>：</span><span class="debate-verdict-summary">GPT-4o 关于性别差距 2:1 的批评非常精准，指出了比『无来源』更深的分级框架问题。GLM 的反驳不仅认错，还主动升级分析——指…</span></div><div class="debate-expand-trigger">查看完整观点</div></div><div class="debate-clash-full"><div class="debate-clash-full-block debate-clash-full-block--challenge"><div class="debate-clash-full-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>GPT-4o</strong></span></div><div class="debate-clash-full-reason">用了无来源的百分位数据，属于『伪精确』误导</div><div class="debate-clash-full-body"><p>『普通成年人平均水平约 45 秒 – 1 分钟』与『超过约 60% 的普通人』两处都没有引用 ACSM、ACE、NCSF 或大样本研究，在健身评估领域属典型伪精确。建议要么引具体研究，要么用『大致』『经验上』等限定词。此外『女性 >2 分钟即优秀』对比『男性 >4 分钟才专业』，性别差距 2:1 缺乏核心肌群性别差异研究支撑。</p></div></div><div class="debate-clash-full-block debate-clash-full-block--rebuttal"><div class="debate-clash-full-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-full-reason">承认无来源数据需改为『经验区间』；性别差距 2:1 是双重失误，女优秀线应提到 2.5-3min</div><div class="debate-clash-full-body"><p>GPT-4o 的两点批评，我分开回应。</p>
+<p><strong>无引用的百分位数据</strong>：和回应 Claude 类似，接受批评。『平均水平约 45s – 1min』没有公开统计支持——平板支撑不是国民体质监测项目，不存在权威均值。应改为『健身行业经验上常见区间』，明确标注是从业者观察而非统计数据。『超过约 60% 的普通人』已在回应 Claude 时撤回。</p>
+<p><strong>性别差距 2:1</strong>：这个批评非常关键，我完全同意。McGill 的实验室数据里男女核心耐力差距通常在 10-30%，不是 100%。原表里男 >4min 专业 vs 女 >2min 优秀，用不同标准（专业 vs 优秀）混淆了比较，又让绝对时长差距翻倍，双重失误。</p>
+<p>修正方向：女性『优秀』线应提到 2.5-3min，且两性使用同一评级语义（不要『优秀』和『专业』混用）。感谢指出，这个问题比单纯的『无来源』更隐蔽，但影响更大——读者会据此判断自己的性别水位。</p></div></div><div class="debate-verdict-full"><div class="debate-verdict-full-header"><span class="debate-verdict-prefix-icon">🎯</span><span>裁判 · <strong>Claude Opus</strong></span><span class="debate-verdict-score"><span class="debate-verdict-score-label">说服力</span><span class="debate-verdict-score-item debate-verdict-score-item--challenge">挑战方 <span class="debate-verdict-score-num">8</span></span><span class="debate-verdict-score-sep">/</span><span class="debate-verdict-score-item debate-verdict-score-item--rebuttal">反驳方 <span class="debate-verdict-score-num">8</span></span></span></div><div class="debate-verdict-full-body"><p>GPT-4o 关于性别差距 2:1 的批评非常精准，指出了比『无来源』更深的分级框架问题。GLM 的反驳不仅认错，还主动升级分析——指出『优秀/专业』语义混用是双重失误。双方都有贡献。</p></div></div></div></div><div class="debate-item"><div class="debate-clash-preview"><div class="debate-clash-grid"><div class="debate-clash-cell debate-clash-cell--challenge"><div class="debate-clash-cell-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>Gemini</strong></span></div><div class="debate-clash-summary">60% 百分比系编造 + 男 60s 合格偏低</div></div><div class="debate-clash-cell debate-clash-cell--rebuttal"><div class="debate-clash-cell-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-summary">认『伪精确』，不认『合格线偏低』；改措辞为『入门基准』，不改 60s 阈值</div></div></div><div class="debate-verdict-preview"><span class="debate-verdict-prefix"><span class="debate-verdict-prefix-icon">🎯</span>裁判 · <strong>Claude Opus</strong>：</span><span class="debate-verdict-summary">Gemini 的『编造百分比』批评成立，但『合格线偏低』属于标准之争而非事实错误。GLM 的『改措辞不改阈值』应对合理——60s 作为…</span></div><div class="debate-expand-trigger">查看完整观点</div></div><div class="debate-clash-full"><div class="debate-clash-full-block debate-clash-full-block--challenge"><div class="debate-clash-full-header"><span class="debate-clash-icon">→</span><span class="debate-clash-role">挑战方 · <strong>Gemini</strong></span></div><div class="debate-clash-full-reason">伪精确百分比 + 分级偏松</div><div class="debate-clash-full-body"><p>『超过 60% 的普通人』『平均水平约 45 – 60 秒』属于编造数据——平板支撑并非国民体质监测常模项目，不存在权威均值。此外男 60 秒直接定为『合格』偏低，对比 McGill 研究，60 秒只能算『入门基准』。GLM 的分级会让读者高估自己的核心力量。</p></div></div><div class="debate-clash-full-block debate-clash-full-block--rebuttal"><div class="debate-clash-full-header"><span class="debate-clash-icon">↩</span><span class="debate-clash-role">反驳</span></div><div class="debate-clash-full-reason">认『伪精确』，不认『合格线偏低』；改措辞为『入门基准』，不改 60s 阈值</div><div class="debate-clash-full-body"><p>Gemini 的第一点和前两位基本一致，我已认错——平板支撑不是国民体质监测项目，不存在权威均值，『60% 的普通人』『平均 45s–1min』均应撤回。</p>
+<p><strong>关于『男 60s 合格偏低』——这里需要保留辩护</strong>：</p>
+<p>我把 60 秒定为男性『合格』，并非凭空。Stuart McGill 在腰椎研究中把健康成年人维持标准平板的合理目标定在 60-120 秒区间，ACE 与多家健身认证机构科普材料普遍以 1 分钟作为『基础核心耐力』参考线。所以『60s 合格』更准确的说法是<strong>行业经验共识下的入门基准</strong>，和 Gemini 批评的『入门基准』在语义上差别不大，只是措辞轻重问题。</p>
+<p>如果要改，我会把表头从『合格』改成『入门基准』，避免让读者以为 60s 就高枕无忧。但把合格线再提高（例如 90s）反而不贴合大众现状——会让原本健身新手看了直接放弃。</p>
+<p>结论：<strong>认『伪精确』，不认『合格线偏低』；改措辞，不改阈值</strong>。</p></div></div><div class="debate-verdict-full"><div class="debate-verdict-full-header"><span class="debate-verdict-prefix-icon">🎯</span><span>裁判 · <strong>Claude Opus</strong></span><span class="debate-verdict-score"><span class="debate-verdict-score-label">说服力</span><span class="debate-verdict-score-item debate-verdict-score-item--challenge">挑战方 <span class="debate-verdict-score-num">7</span></span><span class="debate-verdict-score-sep">/</span><span class="debate-verdict-score-item debate-verdict-score-item--rebuttal">反驳方 <span class="debate-verdict-score-num">7</span></span></span></div><div class="debate-verdict-full-body"><p>Gemini 的『编造百分比』批评成立，但『合格线偏低』属于标准之争而非事实错误。GLM 的『改措辞不改阈值』应对合理——60s 作为大众入门基准有行业共识，只是标签用『合格』确实容易被误读。</p></div></div></div></div></div></div></div></div></div></div>
+</div>
+
+<div class="footer">
+  Generated by MoCompare · 2026-04-26 01:33 · ⚔️ Cross-Model Debate Enabled
+</div>
+
+<button class="back-to-top" id="backToTop" aria-label="回到顶部" title="回到顶部"><span class="back-to-top-icon">↑</span></button>
+
+<script>
+(function () {
+  var btn = document.getElementById('backToTop');
+  if (!btn) return;
+
+  // 显示时机：滚过一屏后渐显
+  function onScroll() {
+    if (window.scrollY > window.innerHeight) btn.classList.add('visible');
+    else btn.classList.remove('visible');
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  // 自定义快速回顶：固定 300ms，ease-out，避免浏览器原生 smooth 在长文档下过慢
+  btn.addEventListener('click', function () {
+    var startY = window.scrollY;
+    if (startY === 0) return;
+    var duration = 300;
+    var startT = performance.now();
+    function step(now) {
+      var t = Math.min(1, (now - startT) / duration);
+      var eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+      window.scrollTo(0, startY * (1 - eased));
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
+  onScroll();
+})();
+</script>
+
+</body>
+</html>

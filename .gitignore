@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Editor
+.vscode/
+.idea/
+
+# Generated artifacts（不跟踪本地生成的 HTML/data，用户自己的 workspace 里会有）
+# 注意：scripts/_gen_moco.py 不在这里，它必须跟踪
+/*.html
+/moco-*.html
+/debate-data*.json
+/out-*.html
+
+# Local testing output in subdirs
+moco-regression-tests/out-*.html
