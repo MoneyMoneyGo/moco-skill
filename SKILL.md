@@ -78,6 +78,11 @@ python3 <skill_root>/scripts/_gen_moco.py --update-check-only
 
 Extract the user's question from the conversation. If no question is provided, ask what to ask.
 
+**问题字数限制（300 字）**：
+- 提取后统计问题字符数（中文字符每个计 1，英文单词计 1）。
+- 若超过 300 字，截取前 300 字，末尾加 `…（已截断）`，然后继续执行。
+- 不需要询问用户，直接截断即可——超长问题通常包含不必要的背景说明，核心论题 300 字内总能表达。
+
 ### Step 2: Select Models
 
 **Default model lineup (unless user specifies otherwise)**:
@@ -193,7 +198,7 @@ UTC 字段获取规则（强制）：
 
 Instructions:
 - Answer in the language the question was asked.
-- Be thorough but concise.
+- **Output limit: ≤ 600 characters (Chinese) / ≤ 600 words (English).** Prioritize core arguments. Omit extended examples, background filler, and repetitive phrasing. Every sentence should carry new information.
 - Structure your answer with clear headings where appropriate.
 - This is Round 1 — provide your initial answer only. Do not reference other models' responses yet.
 ```
